@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Input Data Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin: 10px 0 5px;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="datetime-local"],
+    input[type="file"],
+    button {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    input[type="file"] {
+      padding: 5px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .progress-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 9999;
+      display: none;
+      width: 80%;
+    }
+    .progress-bar-container {
+      width: 100%;
+      background-color: #ddd;
+      border-radius: 5px;
+      overflow: hidden;
+      height: 20px;
+    }
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #4CAF50;
+      transition: width 0.3s ease;
+    }
+    a.button {
+      display: block;
+      text-align: center;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      text-decoration: none;
+      margin-top: 10px;
+    }
+    a.button:hover {
+      background-color: #45a049;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@1.0.15/dist/browser-image-compression.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-storage.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyAZKgYwVwNZFaxipe3VYVcYM4SLYkAums0",
+    authDomain: "ujicobaso2.firebaseapp.com",
+    databaseURL: "https://ujicobaso2-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "ujicobaso2",
+    storageBucket: "ujicobaso2.appspot.com",
+    messagingSenderId: "1019407105989",
+    appId: "1:1019407105989:web:f8a0a1a7f591d76d0ad5ac"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+    const db = getDatabase(app);
+
+    const uploadFile = async (file, path, updateProgress, totalFiles) => {
+      const options = {
+        maxSizeMB: 0.1, // Maksimum ukuran file adalah 100 KB
+        maxWidthOrHeight: 1920,
+        useWebWorker: true
+      };
+
+      try {
+        const compressedFile = await imageCompression(file, options);
+        const fileRef = storageRef(storage, path);
+        const uploadTask = uploadBytesResumable(fileRef, compressedFile);
+
+        return new Promise((resolve, reject) => {
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              updateProgress(progress / totalFiles);
+            },
+            (error) => {
+              reject(error);
+            },
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
+                resolve(downloadURL);
+              });
+            }
+          );
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const issueForm = document.getElementById('issueForm');
+
+      issueForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const inspector = document.getElementById('inspector').value;
+        const time = document.getElementById('time').value;
+
+        const progressPopup = document.getElementById('progressPopup');
+        progressPopup.style.display = 'block';
+
+        const files = [
+          { id: 'flowSystem', path: `flowSystem_${Date.now()}.jpg` },
+          { id: 'driveSystem', path: `driveSystem_${Date.now()}.jpg` },
+          { id: 'oilSystem', path: `oilSystem_${Date.now()}.jpg` },
+          { id: 'rightSideSO2Blower', path: `rightSideSO2Blower_${Date.now()}.jpg` },
+          { id: 'leftSideSO2Blower', path: `leftSideSO2Blower_${Date.now()}.jpg` },
+          { id: 'tempNDEMotor', path: `tempNDEMotor_${Date.now()}.jpg` },
+          { id: 'tempDEMotor', path: `tempDEMotor_${Date.now()}.jpg` },
+          { id: 'tempNDEGearBox', path: `tempNDEGearBox_${Date.now()}.jpg` },
+          { id: 'tempDEGearBox', path: `tempDEGearBox_${Date.now()}.jpg` },
+          { id: 'tempNDEPB', path: `tempNDEPB_${Date.now()}.jpg` },
+          { id: 'tempDEPB', path: `tempDEPB_${Date.now()}.jpg` }
+        ];
+
+        const totalFiles = files.length;
+        let uploadedFiles = 0;
+
+        const updateProgress = (progress) => {
+          uploadedFiles += progress;
+          const totalProgress = (uploadedFiles / totalFiles) * 100;
+          document.querySelector('.progress-bar').style.width = `${totalProgress}%`;
+        };
+
+        const uploadPromises = files.map(async (file) => {
+          const inputFile = document.getElementById(file.id).files[0];
+          return uploadFile(inputFile, file.path, updateProgress, totalFiles);
+        });
+
+        const [
+          flowSystemURL, driveSystemURL, oilSystemURL,
+          rightSideSO2BlowerURL, leftSideSO2BlowerURL,
+          tempNDEMotorURL, tempDEMotorURL, tempNDEGearBoxURL,
+          tempDEGearBoxURL, tempNDEPBURL, tempDEPBURL
+        ] = await Promise.all(uploadPromises);
+
+        const newIssueRef = push(ref(db, 'issues'));
+        await set(newIssueRef, {
+          inspector,
+          time,
+          flowSystem: flowSystemURL,
+          driveSystem: driveSystemURL,
+          oilSystem: oilSystemURL,
+          rightSideSO2Blower: rightSideSO2BlowerURL,
+          leftSideSO2Blower: leftSideSO2BlowerURL,
+          tempNDEMotor: tempNDEMotorURL,
+          tempDEMotor: tempDEMotorURL,
+          tempNDEGearBox: tempNDEGearBoxURL,
+          tempDEGearBox: tempDEGearBoxURL,
+          tempNDEPB: tempNDEPBURL,
+          tempDEPB: tempDEPBURL
+        });
+
+        alert('Data berhasil ditambahkan.');
+        progressPopup.style.display = 'none';
+        document.querySelector('.progress-bar').style.width = '0%';
+        issueForm.reset();
+      });
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Input Data Converter</h1>
+    <form id="issueForm">
+      <label for="inspector">Nama Inspector:</label>
+      <input type="text" id="inspector" name="inspector" required>
+      <label for="time">Waktu:</label>
+      <input type="datetime-local" id="time" name="time" required>
+      <label for="flowSystem">Flow System:</label>
+      <input type="file" id="flowSystem" name="flowSystem" accept="image/*" capture="camera" required>
+      <label for="driveSystem">Drive System:</label>
+      <input type="file" id="driveSystem" name="driveSystem" accept="image/*" capture="camera" required>
+      <label for="oilSystem">Oil System:</label>
+      <input type="file" id="oilSystem" name="oilSystem" accept="image/*" capture="camera" required>
+      <label for="rightSideSO2Blower">Samping Kanan SO2 Blower:</label>
+      <input type="file" id="rightSideSO2Blower" name="rightSideSO2Blower" accept="image/*" capture="camera" required>
+      <label for="leftSideSO2Blower">Samping Kiri SO2 Blower:</label>
+      <input type="file" id="leftSideSO2Blower" name="leftSideSO2Blower" accept="image/*" capture="camera" required>
+      <label for="tempNDEMotor">Temp NDE Motor:</label>
+      <input type="file" id="tempNDEMotor" name="tempNDEMotor" accept="image/*" capture="camera" required>
+      <label for="tempDEMotor">Temp DE Motor:</label>
+      <input type="file" id="tempDEMotor" name="tempDEMotor" accept="image/*" capture="camera" required>
+      <label for="tempNDEGearBox">Temp NDE GearBox:</label>
+      <input type="file" id="tempNDEGearBox" name="tempNDEGearBox" accept="image/*" capture="camera" required>
+      <label for="tempDEGearBox">Temp DE GearBox:</label>
+      <input type="file" id="tempDEGearBox" name="tempDEGearBox" accept="image/*" capture="camera" required>
+      <label for="tempNDEPB">Temp NDE Pedestal Bearing:</label>
+      <input type="file" id="tempNDEPB" name="tempNDEPB" accept="image/*" capture="camera" required>
+      <label for="tempDEPB">Temp DE Pedestal Bearing:</label>
+      <input type="file" id="tempDEPB" name="tempDEPB" accept="image/*" capture="camera" required>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="progressPopup" class="progress-popup">
+      <div class="progress-bar-container">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+    <a href="list.html" class="button">Lihat Daftar</a>
+  </div>
+</body>
+</html>
