@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data List</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Hasil Inspeksi SO2 Blower</h1>
+    <div class="date-picker">
+      <input type="date" id="datePicker">
+      <button id="showDataBtn">Tampilkan</button>
+      <button id="backBtn">Back</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Nomor</th>
+          <th rowspan="2">Nama Inspektor</th>
+          <th rowspan="2">Jam</th>
+          <th colspan="3">Panel SO2 Blower</th>
+          <th colspan="2">Samping SO2 Blower</th>
+          <th colspan="6">Pengecekan Temp Bearing</th>
+          <th rowspan="2">Aksi</th>
+        </tr>
+        <tr>
+          <th>Flow System</th>
+          <th>Drive System</th>
+          <th>Oil System</th>
+          <th>Samping Kanan</th>
+          <th>Samping Kiri</th>
+          <th colspan="2">Motor</th>
+          <th colspan="2">Gearbox</th>
+          <th colspan="2">Pedestal Bearing</th>
+        </tr>
+        <tr>
+          <th colspan="8"></th>
+          <th>Temp NDE</th>
+          <th>Temp DE</th>
+          <th>Temp NDE</th>
+          <th>Temp DE</th>
+          <th>Temp NDE</th>
+          <th>Temp DE</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Data akan ditampilkan di sini -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal untuk gambar -->
+  <div id="imageModal" class="modal" onclick="closeModal()">
+    <span class="close" title="Close">&times;</span>
+    <img class="modal-content" id="modalImage">
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+    import { getDatabase, ref, query, orderByChild, startAt, endAt, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZKgYwVwNZFaxipe3VYVcYM4SLYkAums0",
+      authDomain: "ujicobaso2.firebaseapp.com",
+      databaseURL: "https://ujicobaso2-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "ujicobaso2",
+      storageBucket: "ujicobaso2.appspot.com",
+      messagingSenderId: "1019407105989",
+      appId: "1:1019407105989:web:f8a0a1a7f591d76d0ad5ac"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const fetchData = (selectedDate) => {
+      const startOfDay = `${selectedDate}T00:00:00`;
+      const endOfDay = `${selectedDate}T23:59:59`;
+      const dateQuery = query(ref(db, 'issues'), orderByChild('time'), startAt(startOfDay), endAt(endOfDay));
+      
+      onValue(dateQuery, (snapshot) => {
+        const data = snapshot.val();
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = '';
+
+        if (data) {
+          let counter = 1;
+          Object.keys(data).forEach(key => {
+            const row = data[key];
+            const time = new Date(row.time).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+              <td>${counter++}</td>
+              <td>${row.inspector}</td>
+              <td>${time}</td>
+              <td><img src="${row.flowSystem}" alt="Flow System" onclick="openModal(this)"></td>
+              <td><img src="${row.driveSystem}" alt="Drive System" onclick="openModal(this)"></td>
+              <td><img src="${row.oilSystem}" alt="Oil System" onclick="openModal(this)"></td>
+              <td><img src="${row.rightSideSO2Blower}" alt="Right Side SO2 Blower" onclick="openModal(this)"></td>
+              <td><img src="${row.leftSideSO2Blower}" alt="Left Side SO2 Blower" onclick="openModal(this)"></td>
+              <td><img src="${row.tempNDEMotor}" alt="Temp NDE Motor" onclick="openModal(this)"></td>
+              <td><img src="${row.tempDEMotor}" alt="Temp DE Motor" onclick="openModal(this)"></td>
+              <td><img src="${row.tempNDEGearBox}" alt="Temp NDE GearBox" onclick="openModal(this)"></td>
+              <td><img src="${row.tempDEGearBox}" alt="Temp DE GearBox" onclick="openModal(this)"></td>
+              <td><img src="${row.tempNDEPB}" alt="Temp NDE Pedestal Bearing" onclick="openModal(this)"></td>
+              <td><img src="${row.tempDEPB}" alt="Temp DE Pedestal Bearing" onclick="openModal(this)"></td>
+              <td><button onclick="confirmDeleteData('${key}')">Hapus</button></td>
+            `;
+            tableBody.appendChild(newRow);
+          });
+        } else {
+          const newRow = document.createElement('tr');
+          newRow.innerHTML = `<td colspan="15">No data available for this date.</td>`;
+          tableBody.appendChild(newRow);
+        }
+      });
+    };
+
+    window.confirmDeleteData = (key) => {
+      const userInput = prompt("Masukkan kode verifikasi untuk menghapus data:");
+      if (userInput === "0") {
+        deleteData(key);
+      } else {
+        alert("Kode verifikasi salah. Data tidak dihapus.");
+      }
+    };
+
+    window.deleteData = (key) => {
+      const dataRef = ref(db, 'issues/' + key);
+      remove(dataRef).then(() => {
+        const selectedDate = document.getElementById('datePicker').value;
+        fetchData(selectedDate);
+      }).catch((error) => {
+        console.error("Error removing data: ", error);
+      });
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('datePicker').value = today;
+      fetchData(today);
+
+      document.getElementById('showDataBtn').addEventListener('click', () => {
+        const selectedDate = document.getElementById('datePicker').value;
+        fetchData(selectedDate);
+      });
+
+      document.getElementById('backBtn').addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+    });
+
+    window.openModal = function(imgElement) {
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      modal.style.display = "block";
+      modalImg.src = imgElement.src;
+    };
+
+    window.closeModal = function() {
+      const modal = document.getElementById("imageModal");
+      modal.style.display = "none";
+    };
+  </script>
+</body>
+</html>
