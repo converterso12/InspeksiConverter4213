@@ -62,21 +62,30 @@
     import { getDatabase, ref, query, orderByChild, startAt, endAt, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
-    authDomain: "datainspeksi-4bc52.firebaseapp.com",
-    databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "datainspeksi-4bc52",
-    storageBucket: "datainspeksi-4bc52.appspot.com",
-    messagingSenderId: "344216164261",
-    appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
-  };
+  apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
+  authDomain: "datainspeksi-4bc52.firebaseapp.com",
+  databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "datainspeksi-4bc52",
+  storageBucket: "datainspeksi-4bc52.appspot.com",
+  messagingSenderId: "344216164261",
+  appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
+};
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const getCurrentLocalDate = () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     const fetchData = (selectedDate) => {
       const startOfDay = `${selectedDate}T00:00:00`;
       const endOfDay = `${selectedDate}T23:59:59`;
+
       const dateQuery = query(ref(db, 'issues'), orderByChild('time'), startAt(startOfDay), endAt(endOfDay));
       
       onValue(dateQuery, (snapshot) => {
@@ -137,7 +146,7 @@
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getCurrentLocalDate();
       document.getElementById('datePicker').value = today;
       fetchData(today);
 
