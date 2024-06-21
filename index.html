@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inspeksi SO2 Blower</title>
+  <title>Input Data Converter</title>
   <link rel="stylesheet" href="styles1.css">
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@1.0.15/dist/browser-image-compression.min.js"></script>
   <script type="module">
@@ -12,14 +12,14 @@
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
-    authDomain: "datainspeksi-4bc52.firebaseapp.com",
-    databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "datainspeksi-4bc52",
-    storageBucket: "datainspeksi-4bc52.appspot.com",
-    messagingSenderId: "344216164261",
-    appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
-  };
+  apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
+  authDomain: "datainspeksi-4bc52.firebaseapp.com",
+  databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "datainspeksi-4bc52",
+  storageBucket: "datainspeksi-4bc52.appspot.com",
+  messagingSenderId: "344216164261",
+  appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
+};
 
     const app = initializeApp(firebaseConfig);
     const storage = getStorage(app);
@@ -27,17 +27,17 @@
 
     const uploadFile = async (file, path, updateProgress, totalFiles) => {
       const options = {
-        maxSizeMB: 0.5, // Maksimum ukuran file adalah 100 KB
+        maxSizeMB: 0.5,
         maxWidthOrHeight: 1920,
         useWebWorker: true
       };
 
       try {
-        // Kompresi gambar
         const compressedFile = await imageCompression(file, options);
 
-        // Tambahkan watermark
-        const watermarkText = path.replace(/([A-Z])/g, ' $1').trim(); // Misalnya: "Drive System"
+        const labelElement = document.querySelector(`label[for=${path.split('_')[0]}]`);
+        const watermarkText = labelElement ? labelElement.getAttribute('data-label') : path;
+
         const watermarkedFile = await addWatermark(compressedFile, watermarkText);
 
         const fileRef = storageRef(storage, path);
@@ -65,44 +65,43 @@
     };
 
     const addWatermark = async (file, watermarkText) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async function(event) {
-      const img = new Image();
-      img.onload = async function() {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
 
-        // Tambahkan latar belakang semi-transparan untuk teks agar lebih terlihat
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.fillRect(canvas.width - 300, 10, 190, 70);
+            ctx.font = '50px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
 
-        // Tambahkan teks watermark
-        ctx.font = 'bold 18px Arial';
-        ctx.fillStyle = 'black'; // Warna teks
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'top';
-        ctx.fillText(watermarkText, canvas.width - 10, 20);
-        
-        // Tambahkan tanggal dan waktu
-        const currentDate = new Date();
-        const formattedDate = currentDate.toLocaleDateString('id-ID');
-        const formattedTime = currentDate.toLocaleTimeString('id-ID');
-        ctx.fillText(formattedDate, canvas.width - 10, 45);
-        ctx.fillText(formattedTime, canvas.width - 10, 70);
+            const textX = canvas.width / 2;
+            const textY = canvas.height - 10;
 
-        canvas.toBlob(function(blob) {
-          resolve(blob);
-        }, 'image/jpeg');
-      };
-      img.src = event.target.result;
+            ctx.fillText(watermarkText, textX, textY);
+            
+            const currentDate = new Date();
+            const formattedDate = currentDate.toLocaleDateString('en-US');
+            const formattedTime = currentDate.toLocaleTimeString('en-US');
+
+            ctx.fillText(formattedDate, textX, textY - 110);
+            ctx.fillText(formattedTime, textX, textY - 220);
+
+            canvas.toBlob(function(blob) {
+              resolve(blob);
+            }, 'image/jpeg');
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
     };
-    reader.readAsDataURL(file);
-  });
-};
 
     document.addEventListener('DOMContentLoaded', function() {
       const issueForm = document.getElementById('issueForm');
@@ -184,33 +183,33 @@
 </head>
 <body>
   <div class="container">
-    <h1>Inspeksi SO2 Blower</h1>
+    <h1>Input Data Converter</h1>
     <form id="issueForm">
-      <label for="inspector">Nama Inspector:</label>
+      <label for="inspector" data-label="Nama Inspector">Nama Inspector:</label>
       <input type="text" id="inspector" name="inspector" required>
-      <label for="time">Waktu:</label>
+      <label for="time" data-label="Waktu">Waktu:</label>
       <input type="datetime-local" id="time" name="time" required>
-      <label for="flowSystem">Flow System:</label>
+      <label for="flowSystem" data-label="Flow System">Flow System:</label>
       <input type="file" id="flowSystem" name="flowSystem" accept="image/*" capture="camera" required>
-      <label for="driveSystem">Drive System:</label>
+      <label for="driveSystem" data-label="Drive System">Drive System:</label>
       <input type="file" id="driveSystem" name="driveSystem" accept="image/*" capture="camera" required>
-      <label for="oilSystem">Oil System:</label>
+      <label for="oilSystem" data-label="Oil System">Oil System:</label>
       <input type="file" id="oilSystem" name="oilSystem" accept="image/*" capture="camera" required>
-      <label for="rightSideSO2Blower">Samping Kanan SO2 Blower:</label>
+      <label for="rightSideSO2Blower" data-label="Samping Kanan SO2 Blower">Samping Kanan SO2 Blower:</label>
       <input type="file" id="rightSideSO2Blower" name="rightSideSO2Blower" accept="image/*" capture="camera" required>
-      <label for="leftSideSO2Blower">Samping Kiri SO2 Blower:</label>
+      <label for="leftSideSO2Blower" data-label="Samping Kiri SO2 Blower">Samping Kiri SO2 Blower:</label>
       <input type="file" id="leftSideSO2Blower" name="leftSideSO2Blower" accept="image/*" capture="camera" required>
-      <label for="tempNDEMotor">Temp NDE Motor:</label>
+      <label for="tempNDEMotor" data-label="Temp NDE Motor">Temp NDE Motor:</label>
       <input type="file" id="tempNDEMotor" name="tempNDEMotor" accept="image/*" capture="camera" required>
-      <label for="tempDEMotor">Temp DE Motor:</label>
+      <label for="tempDEMotor" data-label="Temp DE Motor">Temp DE Motor:</label>
       <input type="file" id="tempDEMotor" name="tempDEMotor" accept="image/*" capture="camera" required>
-      <label for="tempNDEGearBox">Temp NDE GearBox:</label>
+      <label for="tempNDEGearBox" data-label="Temp NDE GearBox">Temp NDE GearBox:</label>
       <input type="file" id="tempNDEGearBox" name="tempNDEGearBox" accept="image/*" capture="camera" required>
-      <label for="tempDEGearBox">Temp DE GearBox:</label>
+      <label for="tempDEGearBox" data-label="Temp DE GearBox">Temp DE GearBox:</label>
       <input type="file" id="tempDEGearBox" name="tempDEGearBox" accept="image/*" capture="camera" required>
-      <label for="tempNDEPB">Temp NDE Pedestal Bearing:</label>
+      <label for="tempNDEPB" data-label="Temp NDE Pedestal Bearing">Temp NDE Pedestal Bearing:</label>
       <input type="file" id="tempNDEPB" name="tempNDEPB" accept="image/*" capture="camera" required>
-      <label for="tempDEPB">Temp DE Pedestal Bearing:</label>
+      <label for="tempDEPB" data-label="Temp DE Pedestal Bearing">Temp DE Pedestal Bearing:</label>
       <input type="file" id="tempDEPB" name="tempDEPB" accept="image/*" capture="camera" required>
       <button type="submit">Submit</button>
     </form>
@@ -222,4 +221,4 @@
     <a href="list.html" class="button">Lihat Daftar</a>
   </div>
 </body>
-</html>
+  </html>
