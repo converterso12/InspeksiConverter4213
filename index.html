@@ -5,21 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Input Data Converter</title>
   <link rel="stylesheet" href="styles1.css">
-  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@1.0.15/dist/browser-image-compression.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Input Data Converter</h1>
+    <form id="issueForm">
+      <label for="inspector" data-label="Nama Inspector">Nama Inspector:</label>
+      <input type="text" id="inspector" name="inspector" required>
+      <label for="time" data-label="Waktu">Waktu:</label>
+      <input type="datetime-local" id="time" name="time" required>
+      <label for="flowSystem" data-label="Flow System">Flow System:</label>
+      <input type="file" id="flowSystem" name="flowSystem" accept="image/*" capture="camera" required>
+      <label for="driveSystem" data-label="Drive System">Drive System:</label>
+      <input type="file" id="driveSystem" name="driveSystem" accept="image/*" capture="camera" required>
+      <label for="oilSystem" data-label="Oil System">Oil System:</label>
+      <input type="file" id="oilSystem" name="oilSystem" accept="image/*" capture="camera" required>
+      <label for="rightSideSO2Blower" data-label="Samping Kanan SO2 Blower">Samping Kanan SO2 Blower:</label>
+      <input type="file" id="rightSideSO2Blower" name="rightSideSO2Blower" accept="image/*" capture="camera" required>
+      <label for="leftSideSO2Blower" data-label="Samping Kiri SO2 Blower">Samping Kiri SO2 Blower:</label>
+      <input type="file" id="leftSideSO2Blower" name="leftSideSO2Blower" accept="image/*" capture="camera" required>
+      <label for="tempNDEMotor" data-label="Temp NDE Motor">Temp NDE Motor:</label>
+      <input type="file" id="tempNDEMotor" name="tempNDEMotor" accept="image/*" capture="camera" required>
+      <label for="tempDEMotor" data-label="Temp DE Motor">Temp DE Motor:</label>
+      <input type="file" id="tempDEMotor" name="tempDEMotor" accept="image/*" capture="camera" required>
+      <label for="tempNDEGearBox" data-label="Temp NDE GearBox">Temp NDE GearBox:</label>
+      <input type="file" id="tempNDEGearBox" name="tempNDEGearBox" accept="image/*" capture="camera" required>
+      <label for="tempDEGearBox" data-label="Temp DE GearBox">Temp DE GearBox:</label>
+      <input type="file" id="tempDEGearBox" name="tempDEGearBox" accept="image/*" capture="camera" required>
+      <label for="tempNDEPB" data-label="Temp NDE Pedestal Bearing">Temp NDE Pedestal Bearing:</label>
+      <input type="file" id="tempNDEPB" name="tempNDEPB" accept="image/*" capture="camera" required>
+      <label for="tempDEPB" data-label="Temp DE Pedestal Bearing">Temp DE Pedestal Bearing:</label>
+      <input type="file" id="tempDEPB" name="tempDEPB" accept="image/*" capture="camera" required>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="progressPopup" class="progress-popup">
+      <div class="progress-bar-container">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+    <a href="list.html" class="button">Lihat Daftar</a>
+  </div>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@1.0.15/dist/browser-image-compression.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
     import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-storage.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
-  authDomain: "datainspeksi-4bc52.firebaseapp.com",
-  databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "datainspeksi-4bc52",
-  storageBucket: "datainspeksi-4bc52.appspot.com",
-  messagingSenderId: "344216164261",
-  appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
-};
+      apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
+      authDomain: "datainspeksi-4bc52.firebaseapp.com",
+      databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "datainspeksi-4bc52",
+      storageBucket: "datainspeksi-4bc52.appspot.com",
+      messagingSenderId: "344216164261",
+      appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
+    };
 
     const app = initializeApp(firebaseConfig);
     const storage = getStorage(app);
@@ -33,12 +73,16 @@
       };
 
       try {
+        console.log(`Compressing file: ${file.name}`);
         const compressedFile = await imageCompression(file, options);
+        console.log('File compressed successfully');
 
         const labelElement = document.querySelector(`label[for=${path.split('_')[0]}]`);
         const watermarkText = labelElement ? labelElement.getAttribute('data-label') : path;
 
+        console.log(`Adding watermark to file: ${file.name}`);
         const watermarkedFile = await addWatermark(compressedFile, watermarkText);
+        console.log('Watermark added successfully');
 
         const fileRef = storageRef(storage, path);
         const uploadTask = uploadBytesResumable(fileRef, watermarkedFile);
@@ -47,20 +91,23 @@
           uploadTask.on('state_changed',
             (snapshot) => {
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log(`Upload progress for ${file.name}: ${progress}%`);
               updateProgress(progress / totalFiles);
             },
             (error) => {
+              console.error(`Upload failed for ${file.name}:`, error);
               reject(error);
             },
             () => {
               getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
+                console.log(`File uploaded successfully. URL for ${file.name}:`, downloadURL);
                 resolve(downloadURL);
               });
             }
           );
         });
       } catch (error) {
-        console.error(error);
+        console.error(`Error in uploadFile function for ${file.name}:`, error);
       }
     };
 
@@ -139,7 +186,12 @@
 
         const uploadPromises = files.map(async (file) => {
           const inputFile = document.getElementById(file.id).files[0];
-          return uploadFile(inputFile, file.path, updateProgress, totalFiles);
+          if (inputFile) {
+            return uploadFile(inputFile, file.path, updateProgress, totalFiles);
+          } else {
+            console.error(`File input ${file.id} is empty`);
+            return null;
+          }
         });
 
         try {
@@ -150,29 +202,38 @@
             tempDEGearBoxURL, tempNDEPBURL, tempDEPBURL
           ] = await Promise.all(uploadPromises);
 
-          const newIssueRef = push(ref(db, 'issues'));
-          await set(newIssueRef, {
-            inspector,
-            time,
-            flowSystem: flowSystemURL,
-            driveSystem: driveSystemURL,
-            oilSystem: oilSystemURL,
-            rightSideSO2Blower: rightSideSO2BlowerURL,
-            leftSideSO2Blower: leftSideSO2BlowerURL,
-            tempNDEMotor: tempNDEMotorURL,
-            tempDEMotor: tempDEMotorURL,
-            tempNDEGearBox: tempNDEGearBoxURL,
-            tempDEGearBox: tempDEGearBoxURL,
-            tempNDEPB: tempNDEPBURL,
-            tempDEPB: tempDEPBURL
-          });
+          if (flowSystemURL && driveSystemURL && oilSystemURL &&
+              rightSideSO2BlowerURL && leftSideSO2BlowerURL &&
+              tempNDEMotorURL && tempDEMotorURL && tempNDEGearBoxURL &&
+              tempDEGearBoxURL && tempNDEPBURL && tempDEPBURL) {
+            const newIssueRef = push(ref(db, 'issues'));
+            await set(newIssueRef, {
+              inspector,
+              time,
+              flowSystem: flowSystemURL,
+              driveSystem: driveSystemURL,
+              oilSystem: oilSystemURL,
+              rightSideSO2Blower: rightSideSO2BlowerURL,
+              leftSideSO2Blower: leftSideSO2BlowerURL,
+              tempNDEMotor: tempNDEMotorURL,
+              tempDEMotor: tempDEMotorURL,
+              tempNDEGearBox: tempNDEGearBoxURL,
+              tempDEGearBox: tempDEGearBoxURL,
+              tempNDEPB: tempNDEPBURL,
+              tempDEPB: tempDEPBURL
+            });
 
-          alert('Data berhasil ditambahkan.');
+            alert('Data berhasil ditambahkan.');
+          } else {
+            console.error('Beberapa file gagal diunggah.');
+            alert('Beberapa file gagal diunggah.');
+          }
+
           progressPopup.style.display = 'none';
           document.querySelector('.progress-bar').style.width = '0%';
           issueForm.reset();
         } catch (error) {
-          console.error(error);
+          console.error('Terjadi kesalahan saat mengunggah file:', error);
           alert('Terjadi kesalahan saat mengunggah file.');
           progressPopup.style.display = 'none';
           document.querySelector('.progress-bar').style.width = '0%';
@@ -180,45 +241,5 @@
       });
     });
   </script>
-</head>
-<body>
-  <div class="container">
-    <h1>Input Data Converter</h1>
-    <form id="issueForm">
-      <label for="inspector" data-label="Nama Inspector">Nama Inspector:</label>
-      <input type="text" id="inspector" name="inspector" required>
-      <label for="time" data-label="Waktu">Waktu:</label>
-      <input type="datetime-local" id="time" name="time" required>
-      <label for="flowSystem" data-label="Flow System">Flow System:</label>
-      <input type="file" id="flowSystem" name="flowSystem" accept="image/*" capture="camera" required>
-      <label for="driveSystem" data-label="Drive System">Drive System:</label>
-      <input type="file" id="driveSystem" name="driveSystem" accept="image/*" capture="camera" required>
-      <label for="oilSystem" data-label="Oil System">Oil System:</label>
-      <input type="file" id="oilSystem" name="oilSystem" accept="image/*" capture="camera" required>
-      <label for="rightSideSO2Blower" data-label="Samping Kanan SO2 Blower">Samping Kanan SO2 Blower:</label>
-      <input type="file" id="rightSideSO2Blower" name="rightSideSO2Blower" accept="image/*" capture="camera" required>
-      <label for="leftSideSO2Blower" data-label="Samping Kiri SO2 Blower">Samping Kiri SO2 Blower:</label>
-      <input type="file" id="leftSideSO2Blower" name="leftSideSO2Blower" accept="image/*" capture="camera" required>
-      <label for="tempNDEMotor" data-label="Temp NDE Motor">Temp NDE Motor:</label>
-      <input type="file" id="tempNDEMotor" name="tempNDEMotor" accept="image/*" capture="camera" required>
-      <label for="tempDEMotor" data-label="Temp DE Motor">Temp DE Motor:</label>
-      <input type="file" id="tempDEMotor" name="tempDEMotor" accept="image/*" capture="camera" required>
-      <label for="tempNDEGearBox" data-label="Temp NDE GearBox">Temp NDE GearBox:</label>
-      <input type="file" id="tempNDEGearBox" name="tempNDEGearBox" accept="image/*" capture="camera" required>
-      <label for="tempDEGearBox" data-label="Temp DE GearBox">Temp DE GearBox:</label>
-      <input type="file" id="tempDEGearBox" name="tempDEGearBox" accept="image/*" capture="camera" required>
-      <label for="tempNDEPB" data-label="Temp NDE Pedestal Bearing">Temp NDE Pedestal Bearing:</label>
-      <input type="file" id="tempNDEPB" name="tempNDEPB" accept="image/*" capture="camera" required>
-      <label for="tempDEPB" data-label="Temp DE Pedestal Bearing">Temp DE Pedestal Bearing:</label>
-      <input type="file" id="tempDEPB" name="tempDEPB" accept="image/*" capture="camera" required>
-      <button type="submit">Submit</button>
-    </form>
-    <div id="progressPopup" class="progress-popup">
-      <div class="progress-bar-container">
-        <div class="progress-bar"></div>
-      </div>
-    </div>
-    <a href="list.html" class="button">Lihat Daftar</a>
-  </div>
 </body>
-  </html>
+</html>
