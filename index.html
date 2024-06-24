@@ -15,27 +15,29 @@
       <label for="time" data-label="Waktu">Waktu:</label>
       <input type="datetime-local" id="time" name="time" required>
       <label for="flowSystem" data-label="Flow System">Flow System:</label>
-      <input type="file" id="flowSystem" name="flowSystem" accept="image/*" capture="camera" required>
+      <input type="file" id="flowSystem" name="flowSystem" accept="image/*">
       <label for="driveSystem" data-label="Drive System">Drive System:</label>
-      <input type="file" id="driveSystem" name="driveSystem" accept="image/*" capture="camera" required>
+      <input type="file" id="driveSystem" name="driveSystem" accept="image/*">
       <label for="oilSystem" data-label="Oil System">Oil System:</label>
-      <input type="file" id="oilSystem" name="oilSystem" accept="image/*" capture="camera" required>
+      <input type="file" id="oilSystem" name="oilSystem" accept="image/*">
+      <label for="levelOil" data-label="Level Oil">Level Oil:</label>
+      <input type="file" id="levelOil" name="levelOil" accept="image/*">
       <label for="rightSideSO2Blower" data-label="Samping Kanan SO2 Blower">Samping Kanan SO2 Blower:</label>
-      <input type="file" id="rightSideSO2Blower" name="rightSideSO2Blower" accept="image/*" capture="camera" required>
+      <input type="file" id="rightSideSO2Blower" name="rightSideSO2Blower" accept="image/*">
       <label for="leftSideSO2Blower" data-label="Samping Kiri SO2 Blower">Samping Kiri SO2 Blower:</label>
-      <input type="file" id="leftSideSO2Blower" name="leftSideSO2Blower" accept="image/*" capture="camera" required>
+      <input type="file" id="leftSideSO2Blower" name="leftSideSO2Blower" accept="image/*">
       <label for="tempNDEMotor" data-label="Temp NDE Motor">Temp NDE Motor:</label>
-      <input type="file" id="tempNDEMotor" name="tempNDEMotor" accept="image/*" capture="camera" required>
+      <input type="file" id="tempNDEMotor" name="tempNDEMotor" accept="image/*">
       <label for="tempDEMotor" data-label="Temp DE Motor">Temp DE Motor:</label>
-      <input type="file" id="tempDEMotor" name="tempDEMotor" accept="image/*" capture="camera" required>
+      <input type="file" id="tempDEMotor" name="tempDEMotor" accept="image/*">
       <label for="tempNDEGearBox" data-label="Temp NDE GearBox">Temp NDE GearBox:</label>
-      <input type="file" id="tempNDEGearBox" name="tempNDEGearBox" accept="image/*" capture="camera" required>
+      <input type="file" id="tempNDEGearBox" name="tempNDEGearBox" accept="image/*">
       <label for="tempDEGearBox" data-label="Temp DE GearBox">Temp DE GearBox:</label>
-      <input type="file" id="tempDEGearBox" name="tempDEGearBox" accept="image/*" capture="camera" required>
+      <input type="file" id="tempDEGearBox" name="tempDEGearBox" accept="image/*">
       <label for="tempNDEPB" data-label="Temp NDE Pedestal Bearing">Temp NDE Pedestal Bearing:</label>
-      <input type="file" id="tempNDEPB" name="tempNDEPB" accept="image/*" capture="camera" required>
+      <input type="file" id="tempNDEPB" name="tempNDEPB" accept="image/*">
       <label for="tempDEPB" data-label="Temp DE Pedestal Bearing">Temp DE Pedestal Bearing:</label>
-      <input type="file" id="tempDEPB" name="tempDEPB" accept="image/*" capture="camera" required>
+      <input type="file" id="tempDEPB" name="tempDEPB" accept="image/*">
       <button type="submit">Submit</button>
     </form>
     <div id="progressPopup" class="progress-popup">
@@ -45,7 +47,7 @@
     </div>
     <a href="list.html" class="button">Lihat Daftar</a>
   </div>
-    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@1.0.15/dist/browser-image-compression.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@1.0.15/dist/browser-image-compression.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
     import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-storage.js";
@@ -165,6 +167,7 @@
           { id: 'flowSystem', path: `flowSystem_${Date.now()}.jpg` },
           { id: 'driveSystem', path: `driveSystem_${Date.now()}.jpg` },
           { id: 'oilSystem', path: `oilSystem_${Date.now()}.jpg` },
+          { id: 'levelOil', path: `levelOil_${Date.now()}.jpg` },
           { id: 'rightSideSO2Blower', path: `rightSideSO2Blower_${Date.now()}.jpg` },
           { id: 'leftSideSO2Blower', path: `leftSideSO2Blower_${Date.now()}.jpg` },
           { id: 'tempNDEMotor', path: `tempNDEMotor_${Date.now()}.jpg` },
@@ -196,13 +199,12 @@
 
         try {
           const [
-            flowSystemURL, driveSystemURL, oilSystemURL,
-            rightSideSO2BlowerURL, leftSideSO2BlowerURL,
+            flowSystemURL, driveSystemURL, oilSystemURL, levelOilURL, rightSideSO2BlowerURL, leftSideSO2BlowerURL,
             tempNDEMotorURL, tempDEMotorURL, tempNDEGearBoxURL,
             tempDEGearBoxURL, tempNDEPBURL, tempDEPBURL
           ] = await Promise.all(uploadPromises);
 
-          if (flowSystemURL && driveSystemURL && oilSystemURL &&
+          if (flowSystemURL && driveSystemURL && oilSystemURL && levelOilURL &&
               rightSideSO2BlowerURL && leftSideSO2BlowerURL &&
               tempNDEMotorURL && tempDEMotorURL && tempNDEGearBoxURL &&
               tempDEGearBoxURL && tempNDEPBURL && tempDEPBURL) {
@@ -213,6 +215,7 @@
               flowSystem: flowSystemURL,
               driveSystem: driveSystemURL,
               oilSystem: oilSystemURL,
+              levelOil: levelOilURL,
               rightSideSO2Blower: rightSideSO2BlowerURL,
               leftSideSO2Blower: leftSideSO2BlowerURL,
               tempNDEMotor: tempNDEMotorURL,
@@ -242,4 +245,4 @@
     });
   </script>
 </body>
-</html>
+  </html>
