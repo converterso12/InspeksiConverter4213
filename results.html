@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Inspeksi 4213 Converter</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 5px;
+            padding: 0;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            align-items: center;
+            background: #ffffff;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        label, input, button {
+            display: block;
+            margin: 10px auto;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+        
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+            display: block;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        img.thumbnail {
+           width: 80px;
+            height: 80px;
+            cursor: pointer;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .popup img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
+        }
+        .delete-btn {
+            color: #d9534f;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+         input[type="date"] {
+            font-size: 16px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Inspeksi 4213 Converter</h1>
+
+        <label for="datePicker">Pilih Tanggal:</label>
+        <input type="date" id="datePicker" onchange="loadInspectionResults(this.value)">
+        
+        <button onclick="window.location.href='index.html'">Kembali ke Inspeksi</button>
+
+        <h2>Panel SO2 Blower</h2>
+        <table id="so2BlowerTable">
+            <thead>
+                <tr>
+                    <th>Nomor</th>
+                    <th>Nama</th>
+                    <th>Jam</th>
+                    <th>Flow System</th>
+                    <th>Drive System</th>
+                    <th>Oil System</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>Badan SO2 Blower</h2>
+        <table id="badanBlowerTable">
+            <thead>
+                <tr>
+                    <th>Nomor</th>
+                    <th>Nama</th>
+                    <th>Jam</th>
+                    <th>Level Oil</th>
+                    <th>Samping Kiri</th>
+                    <th>Samping Kanan</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>Temp Bearing</h2>
+        <table id="tempBearingTable">
+            <thead>
+                <tr>
+                    <th rowspan="2">Nomor</th>
+                    <th rowspan="2">Nama</th>
+                    <th rowspan="2">Jam</th>
+                    <th colspan="2">Motor</th>
+          <th colspan="2">Gearbox</th>
+          <th colspan="2">Pedestal Bearing</th>
+          <th rowspan="2">Aksi</th>
+          <tr>
+                    <th>Temp NDE</th>
+                    <th>Temp DE</th>
+                    <th>Temp NDE</th>
+                    <th>Temp DE</th>
+                    <th>Temp NDE</th>
+                    <th>Temp DE</th>
+                    
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="popup" onclick="closePopup()"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getStorage, ref as storageRef, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
+            authDomain: "datainspeksi-4bc52.firebaseapp.com",
+            databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "datainspeksi-4bc52",
+            storageBucket: "datainspeksi-4bc52.appspot.com",
+            messagingSenderId: "344216164261",
+            appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const storage = getStorage(app);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('datePicker').value = today;
+            loadInspectionResults(today);
+        });
+
+        window.loadInspectionResults = function(date) {
+            const inspectionsRef = ref(db, 'inspections');
+            onValue(inspectionsRef, (snapshot) => {
+                const inspections = snapshot.val();
+                let tableData = {
+                    so2Blower: [],
+                    badanBlower: [],
+                    tempBearing: []
+                };
+
+                let counter = 1;
+                for (let key in inspections) {
+                    let inspection = inspections[key];
+                    if (inspection.inspectionTime.startsWith(date)) {
+                        tableData.so2Blower.push([
+                            counter,
+                            inspection.inspectorName,
+                            extractHour(inspection.inspectionTime),
+                            inspection.flowSystem,
+                            inspection.driveSystem,
+                            inspection.oilSystem, // Assuming this field exists in your database
+                            key, // key to identify the record for deletion
+                            inspection.imagePath // Assuming this field exists in your database
+                        ]);
+                        tableData.badanBlower.push([
+                            counter,
+                            inspection.inspectorName,
+                            extractHour(inspection.inspectionTime),
+                            inspection.levelOil,
+                            inspection.sampingKiri,
+                            inspection.sampingKanan,
+                            key, // key to identify the record for deletion
+                            inspection.imagePath // Assuming this field exists in your database
+                        ]);
+                        tableData.tempBearing.push([
+                            counter,
+                            inspection.inspectorName,
+                            extractHour(inspection.inspectionTime),
+                            inspection.tempNDEMotor,
+                            inspection.tempDEMotor,
+                            inspection.tempNDGearBox,
+                            inspection.tempDEGearBox,
+                            inspection.tempNDPedestalBearing,
+                            inspection.tempDEPedestalBearing,
+                            key, // key to identify the record for deletion
+                            inspection.imagePath // Assuming this field exists in your database
+                        ]);
+                        counter++;
+                    }
+                }
+
+                displayTable('so2BlowerTable', tableData.so2Blower);
+                displayTable('badanBlowerTable', tableData.badanBlower);
+                displayTable('tempBearingTable', tableData.tempBearing);
+            });
+        }
+
+        function extractHour(timestamp) {
+            return timestamp.split('T')[1].substring(0, 5);
+        }
+
+        function displayTable(tableId, data) {
+    const table = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+    table.innerHTML = '';
+    for (let row of data) {
+        let tr = document.createElement('tr');
+        for (let i = 0; i < row.length; i++) {
+            let td = document.createElement('td');
+            if (i === row.length - 2) { // Second last item is key
+                let key = row[i];
+                let imagePath = row[i + 1]; // Last item is imagePath
+                let deleteBtn = document.createElement('span');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Hapus'; // Add this line to set the button text
+                deleteBtn.onclick = () => deleteRecord(key, imagePath);
+                td.appendChild(deleteBtn);
+            } else if (row[i] && typeof row[i] === 'string' && row[i].startsWith('inspections/')) {
+                getDownloadURL(storageRef(storage, row[i])).then((url) => {
+                    let img = document.createElement('img');
+                    img.src = url;
+                    img.className = 'thumbnail';
+                    img.onclick = () => openPopup(url);
+                    td.appendChild(img);
+                });
+            } else {
+                td.textContent = row[i];
+            }
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+}
+        function deleteRecord(key, imagePath) {
+            const userConfirmed = prompt('Masukkan kode verifikasi untuk menghapus (00):');
+            if (userConfirmed === '00') {
+                const recordRef = ref(db, 'inspections/' + key);
+                remove(recordRef)
+                    .then(() => {
+                        if (imagePath) {
+                            const imageRef = storageRef(storage, imagePath);
+                            return deleteObject(imageRef);
+                        }
+                    })
+                    .then(() => {
+                        alert('Data dan foto berhasil dihapus.');
+                        loadInspectionResults(document.getElementById('datePicker').value); // Refresh the table after deletion
+                    })
+                    .catch((error) => {
+                        alert('Gagal menghapus data: ' + error.message);
+                    });
+            } else {
+                alert('Kode verifikasi salah. Penghapusan dibatalkan.');
+            }
+        }
+
+        window.openPopup = function(url) {
+            const popup = document.querySelector('.popup');
+            popup.innerHTML = '<img src="' + url + '" /><button class="close-btn" onclick="closePopup()">Close</button>';
+            popup.style.display = 'flex';
+        }
+
+        window.closePopup = function() {
+            document.querySelector('.popup').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

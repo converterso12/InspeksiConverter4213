@@ -1,248 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Input Data Converter</title>
-  <link rel="stylesheet" href="styles1.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Inspeksi 4213 Converter</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            background: #ffffff;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="datetime-local"], input[type="file"], button {
+            width: calc(100% - 5px);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        .two-column {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .two-column > div {
+            width: 50%;
+        }
+        button {
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .btn-secondary {
+            background-color: #007bff;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+        }
+        .progress-bar-container {
+            display: none;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 20px;
+            width: 0;
+            background-color: #28a745;
+            transition: width 0.5s;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.1.1/dist/compressor.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+   const firebaseConfig = {
+            apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
+            authDomain: "datainspeksi-4bc52.firebaseapp.com",
+            databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "datainspeksi-4bc52",
+            storageBucket: "datainspeksi-4bc52.appspot.com",
+            messagingSenderId: "344216164261",
+            appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const storage = getStorage(app);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('inspectionForm').addEventListener('submit', submitForm);
+        });
+
+        async function submitForm(e) {
+            e.preventDefault();
+
+            const inspectorName = document.getElementById('inspectorName').value;
+            const inspectionTime = document.getElementById('inspectionTime').value;
+            const fields = [
+                'flowSystem', 'driveSystem', 'oilSystem', 'levelOil', 
+                'sampingKiri', 'sampingKanan', 'tempNDEMotor', 'tempDEMotor',
+                'tempNDGearBox', 'tempDEGearBox', 'tempNDPedestalBearing', 'tempDEPedestalBearing'
+            ];
+
+            let data = {
+                inspectorName,
+                inspectionTime
+            };
+
+            const progressBarContainer = document.querySelector('.progress-bar-container');
+            const progressBarFill = document.querySelector('.progress-bar-fill');
+            progressBarContainer.style.display = 'block';
+
+            let totalProgress = 0;
+            const totalSteps = fields.length + 1;
+            const increment = 100 / totalSteps;
+
+            for (let field of fields) {
+                let fileInput = document.getElementById(field);
+                let file = fileInput.files[0];
+                if (file) {
+                    await new Promise((resolve, reject) => {
+                        new Compressor(file, {
+                            quality: 0.6,
+                            maxWidth: 1920,
+                            maxHeight: 1080,
+                            success(result) {
+                                addWatermark(result, fileInput.previousElementSibling.textContent).then(watermarkedBlob => {
+                                    let storagePath = `inspections/${Date.now()}_${file.name}`;
+                                    let storageRefInstance = storageRef(storage, storagePath);
+                                    const uploadTask = uploadBytesResumable(storageRefInstance, watermarkedBlob);
+
+                                    uploadTask.on('state_changed', 
+                                        (snapshot) => {
+                                            let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * increment;
+                                            progressBarFill.style.width = `${Math.min(totalProgress + progress, 100)}%`;
+                                        }, 
+                                        (error) => reject(error), 
+                                        () => {
+                                            totalProgress += increment;
+                                            progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
+                                            data[field] = storagePath;
+                                            resolve();
+                                        }
+                                    );
+                                }).catch(error => {
+                                    console.error('Failed to add watermark:', error);
+                                    reject(error);
+                                });
+                            },
+                            error(err) {
+                                console.log(err.message);
+                                reject(err);
+                            },
+                        });
+                    });
+                } else {
+                    totalProgress += increment;
+                    progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
+                }
+            }
+
+            const newInspectionKey = push(ref(db, 'inspections')).key;
+            await set(ref(db, 'inspections/' + newInspectionKey), data);
+            totalProgress += increment;
+            progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
+
+            alert('Form submitted successfully!');
+            document.getElementById('inspectionForm').reset();
+            progressBarContainer.style.display = 'none';
+            progressBarFill.style.width = '0%';
+        }
+
+        function addWatermark(file, labelText) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    ctx.drawImage(img, 0, 0);
+
+                    ctx.fillStyle = 'white';
+                    ctx.font = '70px Arial';
+                    ctx.textAlign = 'center';
+
+                    const currentTime = getCurrentDateTime();
+                    const watermarkText = `${labelText}\n${currentTime.time}\n${currentTime.date}`;
+                    const maxWidth = canvas.width * 0.9
+; // Limit to 90% of canvas width for multiline text
+                    const lineHeight = 70; // Adjust based on font size and line height
+
+                    wrapText(ctx, watermarkText, canvas.width / 2, canvas.height - lineHeight * 3, maxWidth, lineHeight);
+
+                    canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
+                };
+
+                img.onerror = function(error) {
+                    console.error('Failed to load image:', error);
+                    reject(error);
+                };
+
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const words = text.split('\n');
+            let line = '';
+
+            for (const word of words) {
+                const testLine = line + word + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && line) {
+                    context.fillText(line, x, y);
+                    line = word + ' ';
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, y);
+        }
+
+        function getCurrentDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            let month = now.getMonth() + 1;
+            let day = now.getDate();
+            month = month < 10 ? '0' + month : month;
+            day = day < 10 ? '0' + day : day;
+
+            const formattedDate = `${day}/${month}/${year}`;
+            const formattedTime = now.toLocaleTimeString('en-US', { hour12: false });
+
+            return { date: formattedDate, time: formattedTime };
+        }
+    </script>
 </head>
 <body>
-  <div class="container">
-    <h1>Inspeksi 4213 Converter</h1>
-    <form id="issueForm">
-      <label for="inspector" data-label="Nama Inspector">Nama Inspector:</label>
-      <input type="text" id="inspector" name="inspector" required>
-      <label for="time" data-label="Waktu">Waktu:</label>
-      <input type="datetime-local" id="time" name="time" required>
-      <label for="flowSystem" data-label="Flow System">Flow System:</label>
-      <input type="file" id="flowSystem" name="flowSystem" accept="image/*">
-      <label for="driveSystem" data-label="Drive System">Drive System:</label>
-      <input type="file" id="driveSystem" name="driveSystem" accept="image/*">
-      <label for="oilSystem" data-label="Oil System">Oil System:</label>
-      <input type="file" id="oilSystem" name="oilSystem" accept="image/*">
-      <label for="levelOil" data-label="Level Oil">Level Oil:</label>
-      <input type="file" id="levelOil" name="levelOil" accept="image/*">
-      <label for="rightSideSO2Blower" data-label="Samping Kanan SO2 Blower">Samping Kanan SO2 Blower:</label>
-      <input type="file" id="rightSideSO2Blower" name="rightSideSO2Blower" accept="image/*">
-      <label for="leftSideSO2Blower" data-label="Samping Kiri SO2 Blower">Samping Kiri SO2 Blower:</label>
-      <input type="file" id="leftSideSO2Blower" name="leftSideSO2Blower" accept="image/*">
-      <label for="tempNDEMotor" data-label="Temp NDE Motor">Temp NDE Motor:</label>
-      <input type="file" id="tempNDEMotor" name="tempNDEMotor" accept="image/*">
-      <label for="tempDEMotor" data-label="Temp DE Motor">Temp DE Motor:</label>
-      <input type="file" id="tempDEMotor" name="tempDEMotor" accept="image/*">
-      <label for="tempNDEGearBox" data-label="Temp NDE GearBox">Temp NDE GearBox:</label>
-      <input type="file" id="tempNDEGearBox" name="tempNDEGearBox" accept="image/*">
-      <label for="tempDEGearBox" data-label="Temp DE GearBox">Temp DE GearBox:</label>
-      <input type="file" id="tempDEGearBox" name="tempDEGearBox" accept="image/*">
-      <label for="tempNDEPB" data-label="Temp NDE Pedestal Bearing">Temp NDE Pedestal Bearing:</label>
-      <input type="file" id="tempNDEPB" name="tempNDEPB" accept="image/*">
-      <label for="tempDEPB" data-label="Temp DE Pedestal Bearing">Temp DE Pedestal Bearing:</label>
-      <input type="file" id="tempDEPB" name="tempDEPB" accept="image/*">
-      <button type="submit">Submit</button>
-    </form>
-    <div id="progressPopup" class="progress-popup">
-      <div class="progress-bar-container">
-        <div class="progress-bar"></div>
-      </div>
+    <div class="container">
+        <h1>Form Inspeksi 4213 Converter</h1>
+        <form id="inspectionForm">
+            <label for="inspectorName">Nama Inspektor:</label>
+            <input type="text" id="inspectorName" required>
+
+            <label for="inspectionTime">Waktu Inspeksi:</label>
+            <input type="datetime-local" id="inspectionTime" required>
+
+            <div class="two-column">
+                <div>
+                    <label for="flowSystem">Flow System:</label>
+                    <input type="file" id="flowSystem" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="driveSystem">Drive System:</label>
+                    <input type="file" id="driveSystem" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="oilSystem">Oil System:</label>
+                    <input type="file" id="oilSystem" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="levelOil">Level Oil:</label>
+                    <input type="file" id="levelOil" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="sampingKiri">Samping Kiri:</label>
+                    <input type="file" id="sampingKiri" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="sampingKanan">Samping Kanan:</label>
+                    <input type="file" id="sampingKanan" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="tempNDEMotor">Temp NDE Motor:</label>
+                    <input type="file" id="tempNDEMotor" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="tempDEMotor">Temp DE Motor:</label>
+                    <input type="file" id="tempDEMotor" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="tempNDGearBox">Temp NDE GearBox:</label>
+                    <input type="file" id="tempNDGearBox" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="tempDEGearBox">Temp DE GearBox:</label>
+                    <input type="file" id="tempDEGearBox" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="tempNDPedestalBearing">Temp NDE Pedestal:</label>
+                    <input type="file" id="tempNDPedestalBearing" accept="image/*" required>
+                </div>
+                <div>
+                    <label for="tempDEPedestalBearing">Temp DE Pedestal:</label>
+                    <input type="file" id="tempDEPedestalBearing" accept="image/*" required>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <button type="submit">Submit</button>
+            <button type="button" class="btn-secondary" onclick="window.location.href='results.html'">Lihat Hasil</button>
+        </form>
     </div>
-    <a href="list.html" class="button">Lihat Daftar</a>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@1.0.15/dist/browser-image-compression.min.js"></script>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-storage.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
-      authDomain: "datainspeksi-4bc52.firebaseapp.com",
-      databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "datainspeksi-4bc52",
-      storageBucket: "datainspeksi-4bc52.appspot.com",
-      messagingSenderId: "344216164261",
-      appId: "1:344216164261:web:c2bfbfb6952f8c5aedba4c"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const storage = getStorage(app);
-    const db = getDatabase(app);
-
-    const uploadFile = async (file, path, updateProgress, totalFiles) => {
-      const options = {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true
-      };
-
-      try {
-        console.log(`Compressing file: ${file.name}`);
-        const compressedFile = await imageCompression(file, options);
-        console.log('File compressed successfully');
-
-        const labelElement = document.querySelector(`label[for=${path.split('_')[0]}]`);
-        const watermarkText = labelElement ? labelElement.getAttribute('data-label') : path;
-
-        console.log(`Adding watermark to file: ${file.name}`);
-        const watermarkedFile = await addWatermark(compressedFile, watermarkText);
-        console.log('Watermark added successfully');
-
-        const fileRef = storageRef(storage, path);
-        const uploadTask = uploadBytesResumable(fileRef, watermarkedFile);
-
-        return new Promise((resolve, reject) => {
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              console.log(`Upload progress for ${file.name}: ${progress}%`);
-              updateProgress(progress / totalFiles);
-            },
-            (error) => {
-              console.error(`Upload failed for ${file.name}:`, error);
-              reject(error);
-            },
-            () => {
-              getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
-                console.log(`File uploaded successfully. URL for ${file.name}:`, downloadURL);
-                resolve(downloadURL);
-              });
-            }
-          );
-        });
-      } catch (error) {
-        console.error(`Error in uploadFile function for ${file.name}:`, error);
-      }
-    };
-
-    const addWatermark = async (file, watermarkText) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          const img = new Image();
-          img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-
-            ctx.font = '80px Arial';
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-
-            const textX = canvas.width / 2;
-            const textY = canvas.height - 10;
-
-            ctx.fillText(watermarkText, textX, textY);
-            
-            const currentDate = new Date();
-            const formattedDate = currentDate.toLocaleDateString('en-US');
-            const formattedTime = currentDate.toLocaleTimeString('en-US');
-
-            ctx.fillText(formattedDate, textX, textY - 110);
-            ctx.fillText(formattedTime, textX, textY - 220);
-
-            canvas.toBlob(function(blob) {
-              resolve(blob);
-            }, 'image/jpeg');
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    };
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const issueForm = document.getElementById('issueForm');
-
-      issueForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const inspector = document.getElementById('inspector').value;
-        const time = document.getElementById('time').value;
-
-        const progressPopup = document.getElementById('progressPopup');
-        progressPopup.style.display = 'block';
-
-        const files = [
-          { id: 'flowSystem', path: `flowSystem_${Date.now()}.jpg` },
-          { id: 'driveSystem', path: `driveSystem_${Date.now()}.jpg` },
-          { id: 'oilSystem', path: `oilSystem_${Date.now()}.jpg` },
-          { id: 'levelOil', path: `levelOil_${Date.now()}.jpg` },
-          { id: 'rightSideSO2Blower', path: `rightSideSO2Blower_${Date.now()}.jpg` },
-          { id: 'leftSideSO2Blower', path: `leftSideSO2Blower_${Date.now()}.jpg` },
-          { id: 'tempNDEMotor', path: `tempNDEMotor_${Date.now()}.jpg` },
-          { id: 'tempDEMotor', path: `tempDEMotor_${Date.now()}.jpg` },
-          { id: 'tempNDEGearBox', path: `tempNDEGearBox_${Date.now()}.jpg` },
-          { id: 'tempDEGearBox', path: `tempDEGearBox_${Date.now()}.jpg` },
-          { id: 'tempNDEPB', path: `tempNDEPB_${Date.now()}.jpg` },
-          { id: 'tempDEPB', path: `tempDEPB_${Date.now()}.jpg` }
-        ];
-
-        const totalFiles = files.length;
-        let uploadedFiles = 0;
-
-        const updateProgress = (progress) => {
-          uploadedFiles += progress;
-          const totalProgress = (uploadedFiles / totalFiles) * 100;
-          document.querySelector('.progress-bar').style.width = `${totalProgress}%`;
-        };
-
-        const uploadPromises = files.map(async (file) => {
-          const inputFile = document.getElementById(file.id).files[0];
-          if (inputFile) {
-            return uploadFile(inputFile, file.path, updateProgress, totalFiles);
-          } else {
-            console.error(`File input ${file.id} is empty`);
-            return null;
-          }
-        });
-
-        try {
-          const [
-            flowSystemURL, driveSystemURL, oilSystemURL, levelOilURL, rightSideSO2BlowerURL, leftSideSO2BlowerURL,
-            tempNDEMotorURL, tempDEMotorURL, tempNDEGearBoxURL,
-            tempDEGearBoxURL, tempNDEPBURL, tempDEPBURL
-          ] = await Promise.all(uploadPromises);
-
-          if (flowSystemURL && driveSystemURL && oilSystemURL && levelOilURL &&
-              rightSideSO2BlowerURL && leftSideSO2BlowerURL &&
-              tempNDEMotorURL && tempDEMotorURL && tempNDEGearBoxURL &&
-              tempDEGearBoxURL && tempNDEPBURL && tempDEPBURL) {
-            const newIssueRef = push(ref(db, 'issues'));
-            await set(newIssueRef, {
-              inspector,
-              time,
-              flowSystem: flowSystemURL,
-              driveSystem: driveSystemURL,
-              oilSystem: oilSystemURL,
-              levelOil: levelOilURL,
-              rightSideSO2Blower: rightSideSO2BlowerURL,
-              leftSideSO2Blower: leftSideSO2BlowerURL,
-              tempNDEMotor: tempNDEMotorURL,
-              tempDEMotor: tempDEMotorURL,
-              tempNDEGearBox: tempNDEGearBoxURL,
-              tempDEGearBox: tempDEGearBoxURL,
-              tempNDEPB: tempNDEPBURL,
-              tempDEPB: tempDEPBURL
-            });
-
-            alert('Data berhasil ditambahkan.');
-          } else {
-            console.error('Beberapa file gagal diunggah.');
-            alert('Beberapa file gagal diunggah.');
-          }
-
-          progressPopup.style.display = 'none';
-          document.querySelector('.progress-bar').style.width = '0%';
-          issueForm.reset();
-        } catch (error) {
-          console.error('Terjadi kesalahan saat mengunggah file:', error);
-          alert('Terjadi kesalahan saat mengunggah file.');
-          progressPopup.style.display = 'none';
-          document.querySelector('.progress-bar').style.width = '0%';
-        }
-      });
-    });
-  </script>
 </body>
-  </html>
+</html>
