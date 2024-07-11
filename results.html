@@ -188,11 +188,10 @@
         const storage = getStorage(app);
 
         document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('datePicker').value = today;
-            loadInspectionResults(today);
-        });
-
+    const today = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+    document.getElementById('datePicker').value = today;
+    loadInspectionResults(today);
+});
         window.loadInspectionResults = function(date) {
             const inspectionsRef = ref(db, 'inspections');
             onValue(inspectionsRef, (snapshot) => {
