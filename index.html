@@ -80,7 +80,7 @@
         import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
         import { getStorage, ref as storageRef, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-   const firebaseConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyCBf8iQr8yKdVqOz7akEhZaZVrRONtNHcc",
             authDomain: "datainspeksi-4bc52.firebaseapp.com",
             databaseURL: "https://datainspeksi-4bc52-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -132,7 +132,7 @@
                             maxWidth: 1920,
                             maxHeight: 1080,
                             success(result) {
-                                addWatermark(result, fileInput.previousElementSibling.textContent).then(watermarkedBlob => {
+                                addWatermark(result, fileInput.previousElementSibling.textContent, inspectionTime).then(watermarkedBlob => {
                                     let storagePath = `inspections/${Date.now()}_${file.name}`;
                                     let storageRefInstance = storageRef(storage, storagePath);
                                     const uploadTask = uploadBytesResumable(storageRefInstance, watermarkedBlob);
@@ -178,7 +178,7 @@
             progressBarFill.style.width = '0%';
         }
 
-        function addWatermark(file, labelText) {
+        function addWatermark(file, labelText, inspectionTime) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -194,10 +194,8 @@
                     ctx.font = '70px Arial';
                     ctx.textAlign = 'center';
 
-                    const currentTime = getCurrentDateTime();
-                    const watermarkText = `${labelText}\n${currentTime.time}\n${currentTime.date}`;
-                    const maxWidth = canvas.width * 0.9
-; // Limit to 90% of canvas width for multiline text
+                    const watermarkText = `${labelText}\n${inspectionTime.split('T')[1]}\n${inspectionTime.split('T')[0].split('-').reverse().join('/')}`;
+                    const maxWidth = canvas.width * 0.9; // Limit to 90% of canvas width for multiline text
                     const lineHeight = 70; // Adjust based on font size and line height
 
                     wrapText(ctx, watermarkText, canvas.width / 2, canvas.height - lineHeight * 3, maxWidth, lineHeight);
@@ -231,20 +229,6 @@
                 }
             }
             context.fillText(line, x, y);
-        }
-
-        function getCurrentDateTime() {
-            const now = new Date();
-            const year = now.getFullYear();
-            let month = now.getMonth() + 1;
-            let day = now.getDate();
-            month = month < 10 ? '0' + month : month;
-            day = day < 10 ? '0' + day : day;
-
-            const formattedDate = `${day}/${month}/${year}`;
-            const formattedTime = now.toLocaleTimeString('en-US', { hour12: false });
-
-            return { date: formattedDate, time: formattedTime };
         }
     </script>
 </head>
@@ -320,4 +304,4 @@
         </form>
     </div>
 </body>
-</html>
+    </html>
