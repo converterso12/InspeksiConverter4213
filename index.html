@@ -126,41 +126,48 @@
                 let fileInput = document.getElementById(field);
                 let file = fileInput.files[0];
                 if (file) {
-                    await new Promise((resolve, reject) => {
-                        new Compressor(file, {
-                            quality: 0.2,
-                            maxWidth: 1920,
-                            maxHeight: 1080,
-                            success(result) {
-                                addWatermark(result, fileInput.previousElementSibling.textContent, inspectionTime).then(watermarkedBlob => {
-                                    let storagePath = `inspections/${Date.now()}_${file.name}`;
-                                    let storageRefInstance = storageRef(storage, storagePath);
-                                    const uploadTask = uploadBytesResumable(storageRefInstance, watermarkedBlob);
+                    try {
+                        await readFile(file);
+                        await new Promise((resolve, reject) => {
+                            new Compressor(file, {
+                                quality: 0.6,
+                                maxWidth: 1920,
+                                maxHeight: 1080,
+                                success(result) {
+                                    addWatermark(result, fileInput.previousElementSibling.textContent, inspectionTime).then(watermarkedBlob => {
+                                        let storagePath = `inspections/${Date.now()}_${file.name}`;
+                                        let storageRefInstance = storageRef(storage, storagePath);
+                                        const uploadTask = uploadBytesResumable(storageRefInstance, watermarkedBlob);
 
-                                    uploadTask.on('state_changed', 
-                                        (snapshot) => {
-                                            let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * increment;
-                                            progressBarFill.style.width = `${Math.min(totalProgress + progress, 100)}%`;
-                                        }, 
-                                        (error) => reject(error), 
-                                        () => {
-                                            totalProgress += increment;
-                                            progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
-                                            data[field] = storagePath;
-                                            resolve();
-                                        }
-                                    );
-                                }).catch(error => {
-                                    console.error('Failed to add watermark:', error);
-                                    reject(error);
-                                });
-                            },
-                            error(err) {
-                                console.log(err.message);
-                                reject(err);
-                            },
+                                        uploadTask.on('state_changed', 
+                                            (snapshot) => {
+                                                let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * increment;
+                                                progressBarFill.style.width = `${Math.min(totalProgress + progress, 100)}%`;
+                                            }, 
+                                            (error) => reject(error), 
+                                            () => {
+                                                totalProgress += increment;
+                                                progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
+                                                data[field] = storagePath;
+                                                resolve();
+                                            }
+                                        );
+                                    }).catch(error => {
+                                        console.error('Gagal menambahkan watermark:', error);
+                                        reject(error);
+                                    });
+                                },
+                                error(err) {
+                                    console.error('Compressor error:', err.message);
+                                    reject(err);
+                                },
+                            });
                         });
-                    });
+                    } catch (error) {
+                        console.error('Error reading file:', error);
+                        alert('Gagal membaca file gambar. Pastikan file gambar valid dan coba lagi.');
+                        return;
+                    }
                 } else {
                     totalProgress += increment;
                     progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
@@ -172,10 +179,19 @@
             totalProgress += increment;
             progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
 
-            alert('Form submitted successfully!');
+            alert('Formulir berhasil dikirim!');
             document.getElementById('inspectionForm').reset();
             progressBarContainer.style.display = 'none';
             progressBarFill.style.width = '0%';
+        }
+
+        function readFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve();
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(file);
+            });
         }
 
         function addWatermark(file, labelText, inspectionTime) {
@@ -204,7 +220,7 @@
                 };
 
                 img.onerror = function(error) {
-                    console.error('Failed to load image:', error);
+                    console.error('Gagal memuat gambar:', error);
                     reject(error);
                 };
 
@@ -217,91 +233,91 @@
             let line = '';
 
             for (const word of words) {
-                const testLine = line + word + ' ';
-                const metrics = context.measureText(testLine);
-                const testWidth = metrics.width;
-                if (testWidth > maxWidth && line) {
-                    context.fillText(line, x, y);
-                    line = word + ' ';
-                    y += lineHeight;
-                } else {
-                    line = testLine;
+                    const testLine = line + word + ' ';
+                    const metrics = context.measureText(testLine);
+                    const testWidth = metrics.width;
+                    if (testWidth > maxWidth && line) {
+                        context.fillText(line, x, y);
+                        line = word + ' ';
+                        y += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
                 }
+                context.fillText(line, x, y);
             }
-            context.fillText(line, x, y);
-        }
-    </script>
-</head>
-<body>
-    <div class="container">
-        <h1>Form Inspeksi 4213 Converter</h1>
-        <form id="inspectionForm">
-            <label for="inspectorName">Nama Inspektor:</label>
-            <input type="text" id="inspectorName" >
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Form Inspeksi 4213 Converter</h1>
+            <form id="inspectionForm">
+                <label for="inspectorName">Nama Inspektor:</label>
+                <input type="text" id="inspectorName" required>
 
-            <label for="inspectionTime">Waktu Inspeksi:</label>
-            <input type="datetime-local" id="inspectionTime" >
+                <label for="inspectionTime">Waktu Inspeksi:</label>
+                <input type="datetime-local" id="inspectionTime" required>
 
-            <div class="two-column">
-                <div>
-                    <label for="flowSystem">Flow System:</label>
-                    <input type="file" id="flowSystem" accept="image/*" >
+                <div class="two-column">
+                    <div>
+                        <label for="flowSystem">Flow System:</label>
+                        <input type="file" id="flowSystem" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="driveSystem">Drive System:</label>
+                        <input type="file" id="driveSystem" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="oilSystem">Oil System:</label>
+                        <input type="file" id="oilSystem" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="levelOil">Level Oil:</label>
+                        <input type="file" id="levelOil" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="sampingKiri">Samping Kiri:</label>
+                        <input type="file" id="sampingKiri" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="sampingKanan">Samping Kanan:</label>
+                        <input type="file" id="sampingKanan" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="tempNDEMotor">Temp NDE Motor:</label>
+                        <input type="file" id="tempNDEMotor" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="tempDEMotor">Temp DE Motor:</label>
+                        <input type="file" id="tempDEMotor" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="tempNDGearBox">Temp NDE GearBox:</label>
+                        <input type="file" id="tempNDGearBox" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="tempDEGearBox">Temp DE GearBox:</label>
+                        <input type="file" id="tempDEGearBox" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="tempNDPedestalBearing">Temp NDE Pedestal:</label>
+                        <input type="file" id="tempNDPedestalBearing" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label for="tempDEPedestalBearing">Temp DE Pedestal:</label>
+                        <input type="file" id="tempDEPedestalBearing" accept="image/*" required>
+                    </div>
                 </div>
-                <div>
-                    <label for="driveSystem">Drive System:</label>
-                    <input type="file" id="driveSystem" accept="image/*" >
-                </div>
-                <div>
-                    <label for="oilSystem">Oil System:</label>
-                    <input type="file" id="oilSystem" accept="image/*" >
-                </div>
-                <div>
-                    <label for="levelOil">Level Oil:</label>
-                    <input type="file" id="levelOil" accept="image/*" >
-                </div>
-                <div>
-                    <label for="sampingKiri">Samping Kiri:</label>
-                    <input type="file" id="sampingKiri" accept="image/*" >
-                </div>
-                <div>
-                    <label for="sampingKanan">Samping Kanan:</label>
-                    <input type="file" id="sampingKanan" accept="image/*" >
-                </div>
-                <div>
-                    <label for="tempNDEMotor">Temp NDE Motor:</label>
-                    <input type="file" id="tempNDEMotor" accept="image/*" >
-                </div>
-                <div>
-                    <label for="tempDEMotor">Temp DE Motor:</label>
-                    <input type="file" id="tempDEMotor" accept="image/*" >
-                </div>
-                <div>
-                    <label for="tempNDGearBox">Temp NDE GearBox:</label>
-                    <input type="file" id="tempNDGearBox" accept="image/*" >
-                </div>
-                <div>
-                    <label for="tempDEGearBox">Temp DE GearBox:</label>
-                    <input type="file" id="tempDEGearBox" accept="image/*" >
-                </div>
-                <div>
-                    <label for="tempNDPedestalBearing">Temp NDE Pedestal:</label>
-                    <input type="file" id="tempNDPedestalBearing" accept="image/*" >
-                </div>
-                <div>
-                    <label for="tempDEPedestalBearing">Temp DE Pedestal:</label>
-                    <input type="file" id="tempDEPedestalBearing" accept="image/*" >
-                </div>
-            </div>
 
-            <div class="progress-bar-container">
-                <div class="progress-bar">
-                    <div class="progress-bar-fill"></div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill"></div>
+                    </div>
                 </div>
-            </div>
 
-            <button type="submit">Submit</button>
-            <button type="button" class="btn-secondary" onclick="window.location.href='results.html'">Lihat Hasil</button>
-        </form>
-    </div>
-</body>
-                        </html>
+                <button type="submit">Submit</button>
+                <button type="button" class="btn-secondary" onclick="window.location.href='results.html'">Lihat Hasil</button>
+            </form>
+        </div>
+    </body>
+</html>
