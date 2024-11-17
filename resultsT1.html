@@ -125,22 +125,6 @@
             <tbody></tbody>
         </table>
 
-        <h2>Badan SO2 Blower</h2>
-        <table id="badanBlowerTable">
-            <thead>
-                <tr>
-                    <th>Nomor</th>
-                    <th>Nama</th>
-                    <th>Jam</th>
-                    <th>Level Oil</th>
-                    <th>Samping Kiri</th>
-                    <th>Samping Kanan</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-
         <h2>Temp Bearing</h2>
         <table id="tempBearingTable">
             <thead>
@@ -148,6 +132,7 @@
                     <th rowspan="2">Nomor</th>
                     <th rowspan="2">Nama</th>
                     <th rowspan="2">Jam</th>
+                    <th rowspam="2">Level oil</th>
                     <th colspan="2">Motor</th>
           <th colspan="2">Gearbox</th>
           <th colspan="2">Pedestal Bearing</th>
@@ -198,7 +183,7 @@
                 const inspections = snapshot.val();
                 let tableData = {
                     so2Blower: [],
-                    badanBlower: [],
+                    
                     tempBearing: []
                 };
 
@@ -216,20 +201,12 @@
                             key, // key to identify the record for deletion
                             inspection.imagePath // Assuming this field exists in your database
                         ]);
-                        tableData.badanBlower.push([
-                            counter,
-                            inspection.inspectorName,
-                            extractHour(inspection.inspectionTime),
-                            inspection.levelOil,
-                            inspection.sampingKiri,
-                            inspection.sampingKanan,
-                            key, // key to identify the record for deletion
-                            inspection.imagePath // Assuming this field exists in your database
-                        ]);
+                        
                         tableData.tempBearing.push([
                             counter,
                             inspection.inspectorName,
                             extractHour(inspection.inspectionTime),
+                            inspection.levelOil, 
                             inspection.tempNDEMotor,
                             inspection.tempDEMotor,
                             inspection.tempNDGearBox,
@@ -244,7 +221,7 @@
                 }
 
                 displayTable('so2BlowerTable', tableData.so2Blower);
-                displayTable('badanBlowerTable', tableData.badanBlower);
+                
                 displayTable('tempBearingTable', tableData.tempBearing);
             });
         }
