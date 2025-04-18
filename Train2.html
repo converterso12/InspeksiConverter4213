@@ -106,7 +106,7 @@
             const inspectionTime = document.getElementById('inspectionTime').value;
             const fields = [
                 'flowSystem', 'driveSystem', 'oilSystem', 'levelOil', 
-                'tempNDEMotor', 'tempDEMotor',
+                'sampingKiri', 'sampingKanan', 'tempNDEMotor', 'tempDEMotor',
                 'tempNDGearBox', 'tempDEGearBox', 'tempNDPedestalBearing', 'tempDEPedestalBearing'
             ];
 
@@ -254,52 +254,59 @@
             <h1>Form Inspeksi 4203 Converter</h1>
             <form id="inspectionForm">
                 <label for="inspectorName">Nama Inspektor:</label>
-                <input type="text" id="inspectorName" required>
+                <input type="text" id="inspectorName" capture="environment" >
 
                 <label for="inspectionTime">Waktu Inspeksi:</label>
-                <input type="datetime-local" id="inspectionTime" required>
+                <input type="datetime-local" id="inspectionTime" capture="environment" >
 
                 <div class="two-column">
                     <div>
                         <label for="flowSystem">Flow System:</label>
-                        <input type="file" id="flowSystem" accept="image/*" capture="environment" required>
+                        <input type="file" id="flowSystem" accept="image/*" capture="environment" >
                     </div>
                     <div>
                         <label for="driveSystem">Drive System:</label>
-                        <input type="file" id="driveSystem" accept="image/*" capture="environment" required>
+                        <input type="file" id="driveSystem" accept="image/*" capture="environment" >
                     </div>
                     <div>
                         <label for="oilSystem">Oil System:</label>
-                        <input type="file" id="oilSystem" accept="image/*" capture="environment" required>
+                        <input type="file" id="oilSystem" accept="image/*" capture="environment" >
                     </div>
                     <div>
-                        <label for="levelOil">Level Oil (Awal Shift) :</label>
-                        <input type="file" id="levelOil" accept="image/*" capture="environment">
+                        <label for="levelOil">Level Oil:</label>
+                        <input type="file" id="levelOil" accept="image/*" capture="environment" >
                     </div>
-                
+                    <div>
+                        <label for="sampingKiri">Samping Kiri:</label>
+                        <input type="file" id="sampingKiri" accept="image/*" capture="environment" >
+                    </div>
+                    <div>
+                        <label for="sampingKanan">Samping Kanan:</label>
+                        <input type="file" id="sampingKanan" accept="image/*" capture="environment" >
+                    </div>
                     <div>
                         <label for="tempNDEMotor">Temp NDE Motor:</label>
-                        <input type="file" id="tempNDEMotor" accept="image/*" capture="environment" required>
+                        <input type="file" id="tempNDEMotor" accept="image/*" capture="environment" >
                     </div>
                     <div>
                         <label for="tempDEMotor">Temp DE Motor:</label>
-                        <input type="file" id="tempDEMotor" accept="image/*" capture="environment" required>
+                        <input type="file" id="tempDEMotor" accept="image/*" capture="environment" >
                     </div>
                     <div>
                         <label for="tempNDGearBox">Temp NDE GearBox:</label>
-                        <input type="file" id="tempNDGearBox" accept="image/*" capture="environment" required>
+                        <input type="file" id="tempNDGearBox" accept="image/*" capture="environment" >
                     </div>
                     <div>
                         <label for="tempDEGearBox">Temp DE GearBox:</label>
-                        <input type="file" id="tempDEGearBox" accept="image/*" capture="environment" required>
+                        <input type="file" id="tempDEGearBox" accept="image/*" capture="environment" >
                     </div>
                     <div>
                         <label for="tempNDPedestalBearing">Temp NDE Pedestal:</label>
-                        <input type="file" id="tempNDPedestalBearing" accept="image/*" capture="environment" required>
+                        <input type="file" id="tempNDPedestalBearing" accept="image/*" capture="environment" >
                     </div>
                     <div>
                         <label for="tempDEPedestalBearing">Temp DE Pedestal:</label>
-                        <input type="file" id="tempDEPedestalBearing" accept="image/*" capture="environment" required>
+                        <input type="file" id="tempDEPedestalBearing" accept="image/*" capture="environment" >
                     </div>
                 </div>
 
