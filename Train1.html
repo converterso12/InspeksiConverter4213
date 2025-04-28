@@ -4,74 +4,296 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form Inspeksi 4213 Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
         }
+
         .container {
-            max-width: 600px;
-            background: #ffffff;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
         }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
         h1 {
             text-align: center;
-            color: #333;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 2rem;
         }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-header i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
         label {
             display: block;
-            margin: 10px 0 5px;
-            font-weight: bold;
-            color: #555;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
         }
-        input[type="text"], input[type="datetime-local"], input[type="file"], button {
-            width: calc(100% - 20px);
-            padding: 8px;
-            margin: 5px 10;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            font-size: 16px;
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
         }
-        .two-column {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
         }
-        .two-column > div {
-            width: 50%;
-        }
-        button {
+
+        input[type="text"],
+        input[type="datetime-local"],
+        select {
             width: 100%;
-            background-color: #28a745;
-            color: white;
-            border: none;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input[type="text"]:focus,
+        input[type="datetime-local"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .file-input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border: 2px dashed var(--light-gray);
+            border-radius: var(--border-radius);
+            background-color: var(--light);
             cursor: pointer;
-            padding: 15px;
-            margin: 10px 0;
-            font-size: 16px;
+            transition: var(--transition);
+            text-align: center;
+            height: 150px;
         }
-        button:hover {
-            background-color: #218838;
+
+        .file-input-label:hover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
         }
+
+        .file-input-label i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .file-input-label span {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-preview {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+        }
+
+        .file-preview i {
+            margin-right: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
         .btn-secondary {
-            background-color: #007bff;
+            background-color: var(--secondary);
+            color: white;
         }
+
         .btn-secondary:hover {
-            background-color: #0056b3;
+            background-color: #3730a3;
+            transform: translateY(-2px);
         }
+
+        .btn-light {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+
+        .btn-light:hover {
+            background-color: #e2e6ea;
+            transform: translateY(-2px);
+        }
+
         .progress-bar-container {
             display: none;
-            margin: 20px 0;
+            margin: 2rem 0;
         }
+
         .progress-bar {
             width: 100%;
-            background-color: #e0e0e0;
+            height: 10px;
+            background-color: var(--light-gray);
             border-radius: 5px;
             overflow: hidden;
+            margin-bottom: 0.5rem;
         }
+
         .progress-bar-fill {
-            height: 20px;
+            height: 100%;
             width: 0;
-            background-color: #28a745;
+            background-color: var(--primary);
             transition: width 0.5s;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--gray);
+            text-align: center;
+        }
+
+        .mode-selector {
+            margin-bottom: 2rem;
+        }
+
+        .mode-selector label {
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-selector select {
+            padding: 12px 15px;
+            background-color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 0.1rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 1rem;
+            }
+            
+            input[type="text"],
+            input[type="datetime-local"],
+            select {
+                padding: 10px 12px 10px 35px;
+            }
+            
+            .file-input-label {
+                padding: 1.5rem;
+                height: 120px;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.1.1/dist/compressor.min.js"></script>
@@ -81,22 +303,84 @@
         import { getStorage, ref as storageRef, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
         const firebaseConfig = {
-  apiKey: "AIzaSyAr1-HO77Fsv5oJQWe0DEJcjUUqlBKwT3E",
+            apiKey: "AIzaSyAr1-HO77Fsv5oJQWe0DEJcjUUqlBKwT3E",
   authDomain: "data-inspeksi2.firebaseapp.com",
   databaseURL: "https://data-inspeksi2-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "data-inspeksi2",
   storageBucket: "data-inspeksi2.appspot.com",
   messagingSenderId: "71987402680",
   appId: "1:71987402680:web:37db480981a9df7e64614d"
-};
-        
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const storage = getStorage(app);
 
+        function setupFileInput(input, label) {
+            input.addEventListener('click', function(e) {
+                if (document.getElementById('inputMode').value === 'camera') {
+                    e.preventDefault();
+                    
+                    // Buat input file sementara untuk kamera
+                    const cameraInput = document.createElement('input');
+                    cameraInput.type = 'file';
+                    cameraInput.accept = 'image/*';
+                    cameraInput.capture = 'environment'; // Gunakan kamera belakang
+                    
+                    cameraInput.onchange = function(e) {
+                        if (e.target.files.length > 0) {
+                            // Assign foto ke input asli
+                            input.files = e.target.files;
+                            updateFilePreview(label, e.target.files[0]);
+                        }
+                        cameraInput.remove();
+                    };
+                    
+                    // Trigger kamera
+                    cameraInput.click();
+                }
+            });
+
+            input.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    updateFilePreview(label, e.target.files[0]);
+                }
+            });
+        }
+
+        function updateFilePreview(label, file) {
+            const preview = label.querySelector('.file-preview') || document.createElement('div');
+            preview.className = 'file-preview';
+            preview.innerHTML = `<i class="fas fa-check-circle"></i> ${file.name} (${formatFileSize(file.size)})`;
+            
+            if (!label.querySelector('.file-preview')) {
+                label.appendChild(preview);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('inspectionForm').addEventListener('submit', submitForm);
+            
+            // Setup semua input file
+            const fileInputs = document.querySelectorAll('.file-input');
+            fileInputs.forEach(input => {
+                const label = input.closest('.file-input-container').querySelector('.file-input-label');
+                setupFileInput(input, label);
+            });
+
+            // Set default datetime to now
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+            document.getElementById('inspectionTime').value = localISOTime;
         });
 
         async function submitForm(e) {
@@ -117,17 +401,21 @@
 
             const progressBarContainer = document.querySelector('.progress-bar-container');
             const progressBarFill = document.querySelector('.progress-bar-fill');
+            const progressText = document.querySelector('.progress-text');
             progressBarContainer.style.display = 'block';
+            progressText.textContent = 'Mempersiapkan pengiriman...';
 
             let totalProgress = 0;
             const totalSteps = fields.length + 1;
             const increment = 100 / totalSteps;
 
-            for (let field of fields) {
-                let fileInput = document.getElementById(field);
-                let file = fileInput.files[0];
-                if (file) {
-                    try {
+            try {
+                for (let field of fields) {
+                    let fileInput = document.getElementById(field);
+                    let file = fileInput.files[0];
+                    if (file) {
+                        progressText.textContent = `Memproses ${field.replace(/([A-Z])/g, ' $1')}...`;
+                        
                         await readFile(file);
                         await new Promise((resolve, reject) => {
                             new Compressor(file, {
@@ -135,7 +423,7 @@
                                 maxWidth: 1920,
                                 maxHeight: 1080,
                                 success(result) {
-                                    addWatermark(result, fileInput.previousElementSibling.textContent, inspectionTime).then(watermarkedBlob => {
+                                    addWatermark(result, fileInput.previousElementSibling.querySelector('span').textContent, inspectionTime).then(watermarkedBlob => {
                                         let storagePath = `inspections/${Date.now()}_${file.name}`;
                                         let storageRefInstance = storageRef(storage, storagePath);
                                         const uploadTask = uploadBytesResumable(storageRefInstance, watermarkedBlob);
@@ -144,6 +432,7 @@
                                             (snapshot) => {
                                                 let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * increment;
                                                 progressBarFill.style.width = `${Math.min(totalProgress + progress, 100)}%`;
+                                                progressText.textContent = `Mengunggah ${field.replace(/([A-Z])/g, ' $1')}... ${Math.round(progress/increment*100)}%`;
                                             }, 
                                             (error) => reject(error), 
                                             () => {
@@ -164,26 +453,67 @@
                                 },
                             });
                         });
-                    } catch (error) {
-                        console.error('Error reading file:', error);
-                        alert('Gagal membaca file gambar. Pastikan file gambar valid dan coba lagi.');
-                        return;
+                    } else {
+                        totalProgress += increment;
+                        progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
                     }
-                } else {
-                    totalProgress += increment;
-                    progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
                 }
+
+                progressText.textContent = 'Menyimpan data ke database...';
+                const newInspectionKey = push(ref(db, 'inspections')).key;
+                await set(ref(db, 'inspections/' + newInspectionKey), data);
+                totalProgress += increment;
+                progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
+
+                progressText.textContent = 'Pengiriman berhasil!';
+                setTimeout(() => {
+                    progressBarContainer.style.display = 'none';
+                    progressBarFill.style.width = '0%';
+                    showSuccessNotification('Formulir berhasil dikirim!');
+                }, 1000);
+
+                document.getElementById('inspectionForm').reset();
+                // Reset file previews
+                document.querySelectorAll('.file-preview').forEach(el => el.remove());
+            } catch (error) {
+                console.error('Error:', error);
+                progressText.textContent = 'Gagal mengirim formulir. Silakan coba lagi.';
+                showErrorNotification('Gagal mengirim formulir. Pastikan file gambar valid dan coba lagi.');
             }
+        }
 
-            const newInspectionKey = push(ref(db, 'inspections')).key;
-            await set(ref(db, 'inspections/' + newInspectionKey), data);
-            totalProgress += increment;
-            progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
+        function showSuccessNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification success';
+            notification.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            }, 100);
+        }
 
-            alert('Formulir berhasil dikirim!');
-            document.getElementById('inspectionForm').reset();
-            progressBarContainer.style.display = 'none';
-            progressBarFill.style.width = '0%';
+        function showErrorNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification error';
+            notification.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            }, 100);
         }
 
         function readFile(file) {
@@ -196,109 +526,197 @@
         }
 
         function addWatermark(file, labelText, inspectionTime) {
-            return new Promise((resolve, reject) => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
 
-                img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
 
-                    ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0);
 
-                    ctx.fillStyle = 'white';
-                    ctx.font = '70px Arial';
-                    ctx.textAlign = 'center';
+                // Calculate font size based on image dimensions
+                const baseFontSize = Math.min(canvas.width, canvas.height) * 0.05; // 5% of smaller dimension
+                const fontSize = Math.max(20, Math.min(baseFontSize, 70)); // Clamp between 20 and 70px
+                const lineHeight = fontSize * 1.2;
+                
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
 
-                    const watermarkText = `${labelText}\n${inspectionTime.split('T')[1]}\n${inspectionTime.split('T')[0].split('-').reverse().join('/')}`;
-                    const maxWidth = canvas.width * 0.9; // Limit to 90% of canvas width for multiline text
-                    const lineHeight = 70; // Adjust based on font size and line height
+                const watermarkText = `${labelText}\n${inspectionTime.split('T')[1].substring(0, 5)}\n${inspectionTime.split('T')[0].split('-').reverse().join('/')}`;
+                
+                // Calculate text dimensions
+                const lines = watermarkText.split('\n');
+                const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+                const textHeight = lines.length * lineHeight;
+                
+                // Calculate padding based on image size
+                const padding = canvas.width * 0.02; // 2% of image width
+                
+                // Calculate background dimensions with padding
+                const bgWidth = textWidth + padding * 2;
+                const bgHeight = textHeight + padding * 2;
+                
+                // Position watermark in bottom center with some margin
+                const x = canvas.width / 2;
+                const y = canvas.height - bgHeight / 2 - padding;
 
-                    wrapText(ctx, watermarkText, canvas.width / 2, canvas.height - lineHeight * 3, maxWidth, lineHeight);
+                // Add background for better readability
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(
+                    x - bgWidth / 2,
+                    y - bgHeight / 2,
+                    bgWidth,
+                    bgHeight
+                );
 
-                    canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
-                };
+                // Add text
+                ctx.fillStyle = 'white';
+                wrapText(ctx, watermarkText, x, y - (lines.length - 1) * lineHeight / 2, bgWidth, lineHeight);
 
-                img.onerror = function(error) {
-                    console.error('Gagal memuat gambar:', error);
-                    reject(error);
-                };
+                canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
+            };
 
-                img.src = URL.createObjectURL(file);
-            });
+            img.onerror = function(error) {
+                console.error('Gagal memuat gambar:', error);
+                reject(error);
+            };
+
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+        const lines = text.split('\n');
+        
+        for (let i = 0; i < lines.length; i++) {
+            context.fillText(lines[i], x, y + (i * lineHeight));
         }
+    }
 
-        function wrapText(context, text, x, y, maxWidth, lineHeight) {
-            const words = text.split('\n');
-            let line = '';
-
-            for (const word of words) {
-                    const testLine = line + word + ' ';
-                    const metrics = context.measureText(testLine);
-                    const testWidth = metrics.width;
-                    if (testWidth > maxWidth && line) {
-                        context.fillText(line, x, y);
-                        line = word + ' ';
-                        y += lineHeight;
-                    } else {
-                        line = testLine;
-                    }
-                }
-                context.fillText(line, x, y);
-            }
-        </script>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Form Inspeksi 4213 Converter</h1>
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="form-header">
+                <i class="fas fa-clipboard-check"></i>
+                <h1>Form Inspeksi 4213 Converter</h1>
+            </div>
+            
+            <div class="mode-selector">
+                <label for="inputMode">Mode Input Foto:</label>
+                <select id="inputMode">
+                    <option value="camera" selected>Kamera</option>
+                    <option value="gallery">Galeri</option>
+                </select>
+            </div>
+            
             <form id="inspectionForm">
-                <label for="inspectorName">Nama Inspektor:</label>
-                <input type="text" id="inspectorName" required>
-
-                <label for="inspectionTime">Waktu Inspeksi:</label>
-                <input type="datetime-local" id="inspectionTime" required>
-
-                <div class="two-column">
-                    <div>
-                        <label for="flowSystem">Flow System:</label>
-                        <input type="file" id="flowSystem" accept="image/*" required>
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <label for="inspectorName">Nama Inspektor</label>
+                    <input type="text" id="inspectorName" placeholder="Masukkan nama Anda" required>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-clock"></i>
+                    <label for="inspectionTime">Waktu Inspeksi</label>
+                    <input type="datetime-local" id="inspectionTime" required>
+                </div>
+                
+                <div class="grid">
+                    <div class="file-input-container">
+                        <label for="flowSystem" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Flow System</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="flowSystem" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="driveSystem">Drive System:</label>
-                        <input type="file" id="driveSystem" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="driveSystem" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Drive System</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="driveSystem" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="oilSystem">Oil System:</label>
-                        <input type="file" id="oilSystem" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="oilSystem" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Oil System</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="oilSystem" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="levelOil">Level Oil (Awal Shift) :</label>
-                        <input type="file" id="levelOil" accept="image/*" >
+                    
+                    <div class="file-input-container">
+                        <label for="levelOil" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Level Oil (Awal Shift)</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="levelOil" class="file-input" accept="image/*">
                     </div>
-                    <div>
-                        <label for="tempNDEMotor">Temp NDE Motor:</label>
-                        <input type="file" id="tempNDEMotor" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="tempNDEMotor" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Temp NDE Motor</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="tempNDEMotor" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="tempDEMotor">Temp DE Motor:</label>
-                        <input type="file" id="tempDEMotor" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="tempDEMotor" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Temp DE Motor</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="tempDEMotor" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="tempNDGearBox">Temp NDE GearBox:</label>
-                        <input type="file" id="tempNDGearBox" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="tempNDGearBox" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Temp NDE GearBox</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="tempNDGearBox" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="tempDEGearBox">Temp DE GearBox:</label>
-                        <input type="file" id="tempDEGearBox" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="tempDEGearBox" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Temp DE GearBox</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="tempDEGearBox" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="tempNDPedestalBearing">Temp NDE Pedestal:</label>
-                        <input type="file" id="tempNDPedestalBearing" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="tempNDPedestalBearing" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Temp NDE Pedestal</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="tempNDPedestalBearing" class="file-input" accept="image/*" required>
                     </div>
-                    <div>
-                        <label for="tempDEPedestalBearing">Temp DE Pedestal:</label>
-                        <input type="file" id="tempDEPedestalBearing" accept="image/*" required>
+                    
+                    <div class="file-input-container">
+                        <label for="tempDEPedestalBearing" class="file-input-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Temp DE Pedestal</span>
+                            <small>Klik untuk mengambil foto</small>
+                        </label>
+                        <input type="file" id="tempDEPedestalBearing" class="file-input" accept="image/*" required>
                     </div>
                 </div>
 
@@ -306,12 +724,56 @@
                     <div class="progress-bar">
                         <div class="progress-bar-fill"></div>
                     </div>
+                    <div class="progress-text"></div>
                 </div>
 
-                <button type="submit">Submit</button>
-                <button type="button" class="btn-secondary" onclick="window.location.href='resultsT1.html'">Lihat Hasil</button>
-                <button onclick="window.location.href='index.html'">Home</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Submit
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='resultsT2.html'">
+                    <i class="fas fa-eye"></i> Lihat Hasil
+                </button>
+                <button type="button" class="btn btn-light" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
             </form>
         </div>
-    </body>
+    </div>
+
+    <style>
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .notification i {
+            font-size: 1.2rem;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        
+        .notification.success {
+            background-color: #2ecc71;
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+        }
+    </style>
+</body>
 </html>
