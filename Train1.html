@@ -6,6 +6,7 @@
     <title>Form Inspeksi 4213 Converter</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+
     <style>
         :root {
             --primary: #4361ee;
@@ -256,6 +257,31 @@
             background-color: white;
         }
 
+        .photo-grid-container {
+            margin-top: 2rem;
+            text-align: center;
+            display: none;
+        }
+
+        .photo-grid {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .download-grid-btn {
+            margin-top: 1rem;
+            background-color: var(--success);
+            color: white;
+        }
+
+        .download-grid-btn:hover {
+            background-color: #3aa8d5;
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 1rem;
@@ -295,15 +321,49 @@
                 padding: 10px 20px;
             }
         }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .notification i {
+            font-size: 1.2rem;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        
+        .notification.success {
+            background-color: #2ecc71;
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.1.1/dist/compressor.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-        import { getStorage, ref as storageRef, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+        import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAr1-HO77Fsv5oJQWe0DEJcjUUqlBKwT3E",
+            apiKey: apiKey: "AIzaSyAr1-HO77Fsv5oJQWe0DEJcjUUqlBKwT3E",
   authDomain: "data-inspeksi2.firebaseapp.com",
   databaseURL: "https://data-inspeksi2-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "data-inspeksi2",
@@ -321,22 +381,19 @@
                 if (document.getElementById('inputMode').value === 'camera') {
                     e.preventDefault();
                     
-                    // Buat input file sementara untuk kamera
                     const cameraInput = document.createElement('input');
                     cameraInput.type = 'file';
                     cameraInput.accept = 'image/*';
-                    cameraInput.capture = 'environment'; // Gunakan kamera belakang
+                    cameraInput.capture = 'environment';
                     
                     cameraInput.onchange = function(e) {
                         if (e.target.files.length > 0) {
-                            // Assign foto ke input asli
                             input.files = e.target.files;
                             updateFilePreview(label, e.target.files[0]);
                         }
                         cameraInput.remove();
                     };
                     
-                    // Trigger kamera
                     cameraInput.click();
                 }
             });
@@ -369,19 +426,99 @@
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('inspectionForm').addEventListener('submit', submitForm);
             
-            // Setup semua input file
             const fileInputs = document.querySelectorAll('.file-input');
             fileInputs.forEach(input => {
                 const label = input.closest('.file-input-container').querySelector('.file-input-label');
                 setupFileInput(input, label);
             });
 
-            // Set default datetime to now
             const now = new Date();
             const timezoneOffset = now.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
             document.getElementById('inspectionTime').value = localISOTime;
         });
+
+        async function createPhotoGrid(filesData) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const validFiles = filesData.filter(fileData => fileData.file);
+                    
+                    if (validFiles.length === 0) {
+                        reject(new Error("Tidak ada foto yang valid untuk dibuat grid"));
+                        return;
+                    }
+
+                    const cols = 3;
+                    const rows = Math.ceil(validFiles.length / cols);
+                    
+                    const images = await Promise.all(validFiles.map(async (fileData) => {
+                        const img = new Image();
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = reject;
+                            img.src = URL.createObjectURL(fileData.file);
+                        });
+                        return { img, label: fileData.label };
+                    }));
+
+                    const thumbSize = 600;
+                    const padding = 10;
+                    const labelHeight = 40;
+                    
+                    const canvasWidth = cols * (thumbSize + padding) - padding;
+                    const canvasHeight = rows * (thumbSize + padding + labelHeight) - padding;
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    for (let i = 0; i < images.length; i++) {
+                        const row = Math.floor(i / cols);
+                        const col = i % cols;
+                        
+                        const x = col * (thumbSize + padding);
+                        const y = row * (thumbSize + padding + labelHeight);
+                        
+                        const img = images[i].img;
+                        const scale = Math.min(thumbSize / img.width, thumbSize / img.height);
+                        const width = img.width * scale;
+                        const height = img.height * scale;
+                        const offsetX = (thumbSize - width) / 2;
+                        const offsetY = (thumbSize - height) / 2;
+                        
+                        ctx.drawImage(img, x + offsetX, y + offsetY, width, height);
+                        
+                        ctx.strokeStyle = '#ddd';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, thumbSize, thumbSize);
+                        
+                        ctx.fillStyle = '#4361ee';
+                        ctx.fillRect(x, y + thumbSize, thumbSize, labelHeight);
+                        
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 16px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(images[i].label, x + thumbSize/2, y + thumbSize + labelHeight/2);
+                    }
+                    
+                    canvas.toBlob(blob => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error("Gagal membuat photo grid"));
+                        }
+                    }, 'image/jpeg', 0.9);
+                    
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
 
         async function submitForm(e) {
             e.preventDefault();
@@ -389,9 +526,16 @@
             const inspectorName = document.getElementById('inspectorName').value;
             const inspectionTime = document.getElementById('inspectionTime').value;
             const fields = [
-                'flowSystem', 'driveSystem', 'oilSystem', 'levelOil', 
-                'tempNDEMotor', 'tempDEMotor',
-                'tempNDGearBox', 'tempDEGearBox', 'tempNDPedestalBearing', 'tempDEPedestalBearing'
+                {id: 'flowSystem', label: 'Flow System'}, 
+                {id: 'driveSystem', label: 'Drive System'}, 
+                {id: 'oilSystem', label: 'Oil System'}, 
+                {id: 'levelOil', label: 'Level Oil'}, 
+                {id: 'tempNDEMotor', label: 'Temp NDE Motor'}, 
+                {id: 'tempDEMotor', label: 'Temp DE Motor'},
+                {id: 'tempNDGearBox', label: 'Temp NDE GearBox'}, 
+                {id: 'tempDEGearBox', label: 'Temp DE GearBox'}, 
+                {id: 'tempNDPedestalBearing', label: 'Temp NDE Pedestal'}, 
+                {id: 'tempDEPedestalBearing', label: 'Temp DE Pedestal'}
             ];
 
             let data = {
@@ -406,15 +550,17 @@
             progressText.textContent = 'Mempersiapkan pengiriman...';
 
             let totalProgress = 0;
-            const totalSteps = fields.length + 1;
+            const totalSteps = fields.length + 2;
             const increment = 100 / totalSteps;
 
             try {
+                const filesForGrid = [];
+                
                 for (let field of fields) {
-                    let fileInput = document.getElementById(field);
+                    let fileInput = document.getElementById(field.id);
                     let file = fileInput.files[0];
                     if (file) {
-                        progressText.textContent = `Memproses ${field.replace(/([A-Z])/g, ' $1')}...`;
+                        progressText.textContent = `Memproses ${field.label}...`;
                         
                         await readFile(file);
                         await new Promise((resolve, reject) => {
@@ -423,7 +569,7 @@
                                 maxWidth: 1920,
                                 maxHeight: 1080,
                                 success(result) {
-                                    addWatermark(result, fileInput.previousElementSibling.querySelector('span').textContent, inspectionTime).then(watermarkedBlob => {
+                                    addWatermark(result, field.label, inspectionTime).then(watermarkedBlob => {
                                         let storagePath = `inspections/${Date.now()}_${file.name}`;
                                         let storageRefInstance = storageRef(storage, storagePath);
                                         const uploadTask = uploadBytesResumable(storageRefInstance, watermarkedBlob);
@@ -432,13 +578,19 @@
                                             (snapshot) => {
                                                 let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * increment;
                                                 progressBarFill.style.width = `${Math.min(totalProgress + progress, 100)}%`;
-                                                progressText.textContent = `Mengunggah ${field.replace(/([A-Z])/g, ' $1')}... ${Math.round(progress/increment*100)}%`;
+                                                progressText.textContent = `Mengunggah ${field.label}... ${Math.round(progress/increment*100)}%`;
                                             }, 
                                             (error) => reject(error), 
                                             () => {
                                                 totalProgress += increment;
                                                 progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
-                                                data[field] = storagePath;
+                                                data[field.id] = storagePath;
+                                                
+                                                filesForGrid.push({
+                                                    file: watermarkedBlob,
+                                                    label: field.label
+                                                });
+                                                
                                                 resolve();
                                             }
                                         );
@@ -459,6 +611,39 @@
                     }
                 }
 
+                progressText.textContent = 'Membuat photo grid...';
+                try {
+                    const photoGridBlob = await createPhotoGrid(filesForGrid);
+                    const gridStoragePath = `inspections/grids/${Date.now()}_grid.jpg`;
+                    const gridRef = storageRef(storage, gridStoragePath);
+                    
+                    await new Promise((resolve, reject) => {
+                        const uploadTask = uploadBytesResumable(gridRef, photoGridBlob);
+                        
+                        uploadTask.on('state_changed', 
+                            (snapshot) => {
+                                let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * increment;
+                                progressBarFill.style.width = `${Math.min(totalProgress + progress, 100)}%`;
+                                progressText.textContent = `Mengunggah photo grid... ${Math.round(progress/increment*100)}%`;
+                            },
+                            (error) => reject(error),
+                            async () => {
+                                totalProgress += increment;
+                                progressBarFill.style.width = `${Math.min(totalProgress, 100)}%`;
+                                data.photoGrid = gridStoragePath;
+                                
+                                // Get download URL for the grid
+                                const downloadURL = await getDownloadURL(gridRef);
+                                showPhotoGrid(downloadURL);
+                                
+                                resolve();
+                            }
+                        );
+                    });
+                } catch (gridError) {
+                    console.error('Gagal membuat photo grid:', gridError);
+                }
+
                 progressText.textContent = 'Menyimpan data ke database...';
                 const newInspectionKey = push(ref(db, 'inspections')).key;
                 await set(ref(db, 'inspections/' + newInspectionKey), data);
@@ -473,13 +658,28 @@
                 }, 1000);
 
                 document.getElementById('inspectionForm').reset();
-                // Reset file previews
                 document.querySelectorAll('.file-preview').forEach(el => el.remove());
             } catch (error) {
                 console.error('Error:', error);
                 progressText.textContent = 'Gagal mengirim formulir. Silakan coba lagi.';
                 showErrorNotification('Gagal mengirim formulir. Pastikan file gambar valid dan coba lagi.');
             }
+        }
+
+        function showPhotoGrid(downloadURL) {
+            const gridContainer = document.querySelector('.photo-grid-container');
+            const gridImg = document.querySelector('#photoGrid');
+            const downloadBtn = document.querySelector('#downloadGridBtn');
+            
+            gridImg.src = downloadURL;
+            downloadBtn.onclick = () => {
+                const a = document.createElement('a');
+                a.href = downloadURL;
+                a.download = `inspeksi_grid_${new Date().toISOString().split('T')[0]}.jpg`;
+                a.click();
+            };
+            
+            gridContainer.style.display = 'block';
         }
 
         function showSuccessNotification(message) {
@@ -526,77 +726,69 @@
         }
 
         function addWatermark(file, labelText, inspectionTime) {
-        return new Promise((resolve, reject) => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
 
-            img.onload = function() {
-                canvas.width = img.width;
-                canvas.height = img.height;
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
 
-                ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, 0, 0);
 
-                // Calculate font size based on image dimensions
-                const baseFontSize = Math.min(canvas.width, canvas.height) * 0.05; // 5% of smaller dimension
-                const fontSize = Math.max(20, Math.min(baseFontSize, 70)); // Clamp between 20 and 70px
-                const lineHeight = fontSize * 1.2;
-                
-                ctx.font = `bold ${fontSize}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+                    const baseFontSize = Math.min(canvas.width, canvas.height) * 0.05;
+                    const fontSize = Math.max(20, Math.min(baseFontSize, 70));
+                    const lineHeight = fontSize * 1.2;
+                    
+                    ctx.font = `bold ${fontSize}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
 
-                const watermarkText = `${labelText}\n${inspectionTime.split('T')[1].substring(0, 5)}\n${inspectionTime.split('T')[0].split('-').reverse().join('/')}`;
-                
-                // Calculate text dimensions
-                const lines = watermarkText.split('\n');
-                const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
-                const textHeight = lines.length * lineHeight;
-                
-                // Calculate padding based on image size
-                const padding = canvas.width * 0.02; // 2% of image width
-                
-                // Calculate background dimensions with padding
-                const bgWidth = textWidth + padding * 2;
-                const bgHeight = textHeight + padding * 2;
-                
-                // Position watermark in bottom center with some margin
-                const x = canvas.width / 2;
-                const y = canvas.height - bgHeight / 2 - padding;
+                    const watermarkText = `${labelText}\n${inspectionTime.split('T')[1].substring(0, 5)}\n${inspectionTime.split('T')[0].split('-').reverse().join('/')}`;
+                    
+                    const lines = watermarkText.split('\n');
+                    const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+                    const textHeight = lines.length * lineHeight;
+                    
+                    const padding = canvas.width * 0.02;
+                    
+                    const bgWidth = textWidth + padding * 2;
+                    const bgHeight = textHeight + padding * 2;
+                    
+                    const x = canvas.width / 2;
+                    const y = canvas.height - bgHeight / 2 - padding;
 
-                // Add background for better readability
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.fillRect(
-                    x - bgWidth / 2,
-                    y - bgHeight / 2,
-                    bgWidth,
-                    bgHeight
-                );
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.fillRect(
+                        x - bgWidth / 2,
+                        y - bgHeight / 2,
+                        bgWidth,
+                        bgHeight
+                    );
 
-                // Add text
-                ctx.fillStyle = 'white';
-                wrapText(ctx, watermarkText, x, y - (lines.length - 1) * lineHeight / 2, bgWidth, lineHeight);
+                    ctx.fillStyle = 'white';
+                    wrapText(ctx, watermarkText, x, y - (lines.length - 1) * lineHeight / 2, bgWidth, lineHeight);
 
-                canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
-            };
+                    canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
+                };
 
-            img.onerror = function(error) {
-                console.error('Gagal memuat gambar:', error);
-                reject(error);
-            };
+                img.onerror = function(error) {
+                    console.error('Gagal memuat gambar:', error);
+                    reject(error);
+                };
 
-            img.src = URL.createObjectURL(file);
-        });
-    }
-
-    function wrapText(context, text, x, y, maxWidth, lineHeight) {
-        const lines = text.split('\n');
-        
-        for (let i = 0; i < lines.length; i++) {
-            context.fillText(lines[i], x, y + (i * lineHeight));
+                img.src = URL.createObjectURL(file);
+            });
         }
-    }
 
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const lines = text.split('\n');
+            
+            for (let i = 0; i < lines.length; i++) {
+                context.fillText(lines[i], x, y + (i * lineHeight));
+            }
+        }
     </script>
 </head>
 <body>
@@ -720,6 +912,13 @@
                     </div>
                 </div>
 
+                <div class="photo-grid-container">
+                    <img id="photoGrid" class="photo-grid" alt="Photo Grid Inspeksi">
+                    <button id="downloadGridBtn" class="btn download-grid-btn">
+                        <i class="fas fa-download"></i> Download Photo Grid
+                    </button>
+                </div>
+
                 <div class="progress-bar-container">
                     <div class="progress-bar">
                         <div class="progress-bar-fill"></div>
@@ -730,7 +929,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-paper-plane"></i> Submit
                 </button>
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='resultsT2.html'">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='resultsT1.html'">
                     <i class="fas fa-eye"></i> Lihat Hasil
                 </button>
                 <button type="button" class="btn btn-light" onclick="window.location.href='index.html'">
@@ -739,41 +938,5 @@
             </form>
         </div>
     </div>
-
-    <style>
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px 25px;
-            border-radius: var(--border-radius);
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 1000;
-        }
-        
-        .notification i {
-            font-size: 1.2rem;
-        }
-        
-        .notification.show {
-            opacity: 1;
-        }
-        
-        .notification.success {
-            background-color: #2ecc71;
-        }
-        
-        .notification.error {
-            background-color: #e74c3c;
-        }
-    </style>
 </body>
 </html>
